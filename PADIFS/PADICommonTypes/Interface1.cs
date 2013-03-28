@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PADICommonTypes
 {
-    interface Interface1
+    interface IMDServer
     {
     }
 }
