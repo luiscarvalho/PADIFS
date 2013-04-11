@@ -14,19 +14,18 @@ namespace MetaData_Server
     [Serializable]
     class Metadata_Server
     {
-        static int nserver = 0;
-        static string servername = "m-";
+        static string servername;
 
         static void Main(string[] args)
         {
-            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
+            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[0]));
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
-            servername += nserver.ToString();
+            servername = args[0];
           //  DebugDelegate debug = new DebugDelegate(Debug);
           //  MDServer mdserver = new MDServer(debug);
-            System.Console.WriteLine("Metadata Server m-" + nserver + " on");
+            System.Console.WriteLine("Metadata Server " + servername + " on");
             nserver++;
             System.Console.ReadLine();
         }
