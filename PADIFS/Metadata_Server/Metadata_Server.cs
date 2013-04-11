@@ -26,7 +26,7 @@ namespace MetaData_Server
           //  DebugDelegate debug = new DebugDelegate(Debug);
           //  MDServer mdserver = new MDServer(debug);
             System.Console.WriteLine("Metadata Server " + servername + " on");
-            nserver++;
+           // nserver++;
             System.Console.ReadLine();
         }
 
