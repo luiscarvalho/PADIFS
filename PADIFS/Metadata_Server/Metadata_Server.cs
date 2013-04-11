@@ -15,7 +15,7 @@ namespace MetaData_Server
     class Metadata_Server
     {
         static int nserver = 0;
-        static string servername = "m - ";
+        static string servername = "m-";
 
         static void Main(string[] args)
         {
@@ -26,7 +26,7 @@ namespace MetaData_Server
             servername += nserver.ToString();
           //  DebugDelegate debug = new DebugDelegate(Debug);
           //  MDServer mdserver = new MDServer(debug);
-            System.Console.WriteLine("Metadata Server m - " + nserver + " on");
+            System.Console.WriteLine("Metadata Server m-" + nserver + " on");
             nserver++;
             System.Console.ReadLine();
         }

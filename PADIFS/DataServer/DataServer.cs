@@ -14,7 +14,7 @@ namespace DataServer
     class DataServer
     {
         static int dserver = 0;
-        static string servername = "d - ";
+        static string servername = "d-";
 
         static void Main(string[] args)
         {
@@ -23,7 +23,7 @@ namespace DataServer
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(DServer), "Data_Server",
             WellKnownObjectMode.Singleton);
             servername += dserver.ToString();
-            System.Console.WriteLine("Data Server m - " + dserver + " on");
+            System.Console.WriteLine("Data Server d-" + dserver + " on");
             dserver++;
             System.Console.ReadLine();
         }
