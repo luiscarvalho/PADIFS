@@ -19,7 +19,7 @@ namespace MetaData_Server
 
         static void Main(string[] args)
         {
-            TcpChannel channel = new TcpChannel(8086);
+            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
@@ -110,23 +110,26 @@ namespace MetaData_Server
 
         }
 
-        public void FAIL(string mdserver)
+        public void FAIL(string mdserver, DebugDelegate debug)
         {
             mdTable.EndInit();
             mdTable.EndLoadData();
             failServer = 1;
+            debug("MetaData_Server" + mdserver_name + "has failed");
         }
 
-        public void RECOVER(string mdserver)
+        public void RECOVER(string mdserver, DebugDelegate debug)
         {
             if (failServer == 0)
             {
                new MDServer(new DebugDelegate(debug));
+               debug("MetaData_Server" + mdserver_name + "on");
             }
             else
             {
                 this.mdTable = mdTable.Clone();
                 failServer = 0;
+                debug("MetaData_Server" + mdserver_name + "is back on");
             }
         }
     }

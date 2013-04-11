@@ -116,7 +116,7 @@ namespace DataServer
             }
         }
 
-        public void FREEZE()
+        public void FREEZE(string dserver, DebugDelegate debug)
         {
             if (failServer == 0)
             {
@@ -129,7 +129,7 @@ namespace DataServer
             }
         }
 
-        public void UNFREEZE()
+        public void UNFREEZE(string dserver, DebugDelegate debug)
         {
             if (failServer == 0)
             {
@@ -154,13 +154,13 @@ namespace DataServer
             }
         }
 
-        public void FAIL()
+        public void FAIL(string dserver, DebugDelegate debug)
         {
             failServer = 1;
             debug("Server " + dserver_name + "has failed.");
         }
 
-        public void RECOVER()
+        public void RECOVER(string dserver, DebugDelegate debug)
         {
             failServer = 0;
             debug("Server " + dserver_name + "is back online.");
