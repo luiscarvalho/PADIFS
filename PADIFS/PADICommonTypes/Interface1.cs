@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PADICommonTypes
 {
-
+    [Serializable]
     public delegate void DebugDelegate(string mensagem);
     
     public interface IMDServer

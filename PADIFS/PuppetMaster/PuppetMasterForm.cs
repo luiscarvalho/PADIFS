@@ -1,10 +1,12 @@
-﻿using System;
+﻿using PADICommonTypes;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -41,7 +43,7 @@ namespace PuppetMaster
             else
             {
                 infoTX.Text = scriptPath;
-             //   string[] script = System.IO.File.ReadAllLines(scriptPath);
+                string[] script = System.IO.File.ReadAllLines(scriptPath);
             }
         }
 
@@ -115,9 +117,10 @@ namespace PuppetMaster
             }
             else
             {
-                // comando que lança um processo... ainda não sei bem como funciona 
-                System.Diagnostics.Process.Start(".\\Data_Server\\bin\\Release\\Data_Server.exe", "parametros-por exemplo o endereço");
-                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                // comando que lança um processo dataserver
+                string[] nserver = command[1].Split('-');
+                System.Diagnostics.Process.Start(".\\Data_Server\\bin\\Debug\\Data_Server.exe", command[1] + " 808" + nserver[1]);
+                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with port: " + "808" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "endereço");
             }
         }
@@ -127,13 +130,16 @@ namespace PuppetMaster
 
             if (metadataList.Contains(command[1]))
             {
-                // Recover metadata
+                IMDServer mdsrecover = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsrecover.RECOVER(" ");
             }
             else
             {
-                // comando que lança um processo... ainda não sei bem como funciona 
-                System.Diagnostics.Process.Start(".\\Metadata_Server\\bin\\Release\\Metadata_Server.exe", "parametros-por exemplo o endereço");
-                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                // comando que lança um processo metadata server
+                string[] nserver = command[1].Split('-');
+                System.Diagnostics.Process.Start(".\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " 808"+nserver[1]);
+                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with port: " + "808"+nserver[1] + "\r\n";
                 metadataList.Add(command[1], "endereço");
             }
 
@@ -144,12 +150,15 @@ namespace PuppetMaster
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
+
+
             }
             else
             {
-                // comando que lança um processo... ainda não sei bem como funciona 
-                System.Diagnostics.Process.Start(".\\Client\\bin\\Release\\Client.exe", "parametros-por exemplo o endereço");
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                // comando que lança um processo client
+                string[] nclient = command[1].Split('-');
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 808" + nclient[1]);
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 808" + nclient[1] + "\r\n";
                 metadataList.Add(command[1], "endereço");
             }
         }
