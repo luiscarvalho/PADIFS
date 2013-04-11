@@ -15,6 +15,7 @@ namespace MetaData_Server
     class Metadata_Server
     {
         static string servername;
+        static MDServer mdserver;
 
         static void Main(string[] args)
         {
@@ -24,7 +25,7 @@ namespace MetaData_Server
             WellKnownObjectMode.Singleton);
             servername = args[0];
             DebugDelegate debug = new DebugDelegate(Debug);
-            MDServer mdserver = new MDServer(debug);
+            mdserver = new MDServer(debug);
             System.Console.WriteLine("Metadata Server " + servername + " on");
             System.Console.ReadLine();
         }
