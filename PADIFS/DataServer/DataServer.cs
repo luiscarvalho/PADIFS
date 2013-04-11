@@ -37,7 +37,10 @@ namespace DataServer
     public class DServer : MarshalByRefObject, IDServer
     {
         private string dserver_name = "d - ";
+        private List<string> dsrequests = new List<string>();
         private int numServer = 0;
+        private int freezeServer = 0;
+        private int failServer = 0;
         private string serverpath;
         private string filename;
         private byte[] filecontent;
@@ -47,6 +50,7 @@ namespace DataServer
         public DServer(DebugDelegate debug)
         {
             dserver_name += numServer;
+            freezeServer = 0;
             serverpath = Directory.GetCurrentDirectory();
             serverpath += Path.Combine(dserver_name);
             if (!Directory.Exists(serverpath))
@@ -58,40 +62,108 @@ namespace DataServer
         }
 
         public void READ(string filename, string semantics, DebugDelegate debug)
-        { 
-            foreach (string fname in Directory.GetFiles(serverpath))
+        {
+            if (failServer == 0)
             {
-                if(fname.Equals(filename)){
-                    System.Console.WriteLine("Encontrei ficheiro!");
-                    File.OpenRead(serverpath += filename);
-                    File.ReadAllLines(serverpath += filename);
+                if (freezeServer == 0)
+                {
+                    foreach (string fname in Directory.GetFiles(serverpath))
+                    {
+                        if (fname.Equals(filename))
+                        {
+                            System.Console.WriteLine("Encontrei ficheiro!");
+                            File.OpenRead(serverpath += filename);
+                            File.ReadAllLines(serverpath += filename);
+                        }
+                    }
                 }
+                else
+                {
+                    dsrequests.Add("READ/" + filename + "/" + semantics);
+                }
+                debug("File" + filename + "opened for read purposes");
             }
-            debug("File" + filename + "opened for read purposes");
+            else
+            {
+                debug("Server" + dserver_name + "has failed");
+            }
         }
 
         public void WRITE(string filename, byte[] content, DebugDelegate debug)
         {
-            foreach (string fname in Directory.GetFiles(serverpath))
+            if (failServer == 0)
             {
-                if (fname.Equals(filename))
+                if (freezeServer == 1)
                 {
-                    File.AppendAllText(serverpath += filename, content.ToString());
+                    foreach (string fname in Directory.GetFiles(serverpath))
+                    {
+                        if (fname.Equals(filename))
+                        {
+                            File.AppendAllText(serverpath += filename, content.ToString());
+                        }
+                    }
+                    File.WriteAllText(serverpath += filename, content.ToString());
                 }
+                else
+                {
+                    dsrequests.Add("WRITE/" + filename + "/" + content.ToString());
+                }
+                debug("File" + filename + "opened for write purposes");
             }
-            File.WriteAllText(serverpath += filename, content.ToString());
-            debug("File" + filename + "opened for write purposes");
+            else
+            {
+                debug("Server" + dserver_name + "has failed");
+            }
         }
 
         public void FREEZE()
         {
-
+            if (failServer == 0)
+            {
+                freezeServer = 1;
+                debug("Requests holded.");
+            }
+            else
+            {
+                debug("Server" + dserver_name + "has failed");
+            }
         }
 
         public void UNFREEZE()
         {
+            if (failServer == 0)
+            {
+                foreach (string request in dsrequests)
+                {
+                    string[] req = request.Split('/');
 
+                    if (req[0].Equals("READ"))
+                    {
+                        READ(req[1], req[2], new DebugDelegate(debug));
+                    }
+                    else if (req[0].Equals("WRITE"))
+                    {
+                        WRITE(req[1], System.Text.Encoding.UTF8.GetBytes(req[2]), new DebugDelegate(debug));
+                    }
+                }
+                debug("Dealt with Requests.");
+            }
+            else
+            {
+                debug("Server" + dserver_name + "has failed");
+            }
         }
 
+        public void FAIL()
+        {
+            failServer = 1;
+            debug("Server " + dserver_name + "has failed.");
+        }
+
+        public void RECOVER()
+        {
+            failServer = 0;
+            debug("Server " + dserver_name + "is back online.");
+        }
     }
 }
