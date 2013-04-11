@@ -160,8 +160,8 @@ namespace PuppetMaster
             {
                 // comando que lança um processo dataserver
                 string[] nserver = command[1].Split('-');
-                System.Diagnostics.Process.Start(".\\Data_Server\\bin\\Debug\\Data_Server.exe", command[1] + " 808" + nserver[1]);
-                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with port: " + "809" + nserver[1] + "\r\n";
+                System.Diagnostics.Process.Start(".\\Data_Server\\bin\\Debug\\Data_Server.exe", command[1].ToString() + " :808" + nserver[1].ToString());
+                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with port: " + "808" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "807" + nserver[1]);
             }
         }
