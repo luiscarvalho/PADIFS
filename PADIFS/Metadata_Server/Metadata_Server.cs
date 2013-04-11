@@ -24,8 +24,8 @@ namespace MetaData_Server
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
             servername += nserver.ToString();
-          //  DebugDelegate debug = new DebugDelegate(Debug);
-          //  MDServer mdserver = new MDServer(debug);
+            DebugDelegate debug = new DebugDelegate(Debug);
+            MDServer mdserver = new MDServer(debug);
             System.Console.WriteLine("Metadata Server m-" + nserver + " on");
             nserver++;
             System.Console.ReadLine();
