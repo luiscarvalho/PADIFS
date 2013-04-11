@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -14,6 +15,9 @@ namespace PuppetMaster
     {
 
         string[] script;
+        Hashtable metadataList = new Hashtable();
+        Hashtable clientList = new Hashtable();
+        Hashtable dataserverList = new Hashtable();
 
         public PuppetMasterForm()
         {
@@ -31,10 +35,13 @@ namespace PuppetMaster
             string scriptPath = scriptPathTX.Text;
 
             if (scriptPath == null)
-            { }
+            {
+                infoTX.Text = infoTX.Text + "You must enter a file name!" + "\r\n";
+            }
             else
             {
-                string[] script = System.IO.File.ReadAllLines(scriptPath);
+                infoTX.Text = scriptPath;
+             //   string[] script = System.IO.File.ReadAllLines(scriptPath);
             }
         }
 
@@ -60,54 +67,91 @@ namespace PuppetMaster
             {
 
                 case "RECOVER":
-                    recover(command);
+                    Recover(command);
                     break;
                 case "UNFREEZE":
-                    unfreeze(command);
+                    Unfreeze(command);
                     break;
                 case "FAIL":
-                    fail(command);
+                    //Fail(command);
                     break;
                 case "FREEZE":
-                    freeze(command);
+                    //Freeze(command);
                     break;
                 case "CREATE":
-                    create(command);
+                    Create(command);
                     break;
                 case "OPEN":
-                    open(command);
+                    //open(command);
                     break;
                 case "CLOSE":
-                    closeFile(command);
+                    //closeFile(command);
                     break;
                 case "READ":
-                    read(command);
+                    //read(command);
                     break;
                 case "WRITE":
-                    write(command);
+                    //write(command);
                     break;
                 case "COPY":
-                    copy(command);
+                    //copy(command);
                     break;
                 case "DUMP":
-                    dump(command);
+                    //dump(command);
                     break;
                 case "EXESCRIPT":
-                    exescript(command);
+                    //exescript(command);
                     break;
                 default:
                     break;
             }
         }
 
-        private void unfreeze(string[] command)
+        private void Unfreeze(string[] command)
         {
-            throw new NotImplementedException();
+            if (dataserverList.Contains(command[1]))
+            {
+                // Unfreeze data server
+            }
+            else
+            {
+                // comando que lança um processo... ainda não sei bem como funciona 
+                System.Diagnostics.Process.Start(".\\Data_Server\\bin\\Release\\Data_Server.exe", "parametros-por exemplo o endereço");
+                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                dataserverList.Add(command[1], "endereço");
+            }
         }
 
-        private void recover(string[] command)
+        private void Recover(string[] command)
         {
-            throw new NotImplementedException();
+
+            if (metadataList.Contains(command[1]))
+            {
+                // Recover metadata
+            }
+            else
+            {
+                // comando que lança um processo... ainda não sei bem como funciona 
+                System.Diagnostics.Process.Start(".\\Metadata_Server\\bin\\Release\\Metadata_Server.exe", "parametros-por exemplo o endereço");
+                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                metadataList.Add(command[1], "endereço");
+            }
+
+        }
+
+        private void Create(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                // Commands client to create a file
+            }
+            else
+            {
+                // comando que lança um processo... ainda não sei bem como funciona 
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Release\\Client.exe", "parametros-por exemplo o endereço");
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with address: " + "xxxxx" + "\r\n";
+                metadataList.Add(command[1], "endereço");
+            }
         }
     }
 }
