@@ -18,7 +18,7 @@ namespace DataServer
 
         static void Main(string[] args)
         {
-            TcpChannel channel = new TcpChannel(8087);
+            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(DServer), "Data_Server",
             WellKnownObjectMode.Singleton);

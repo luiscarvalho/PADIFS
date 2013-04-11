@@ -39,7 +39,7 @@ namespace MetaData_Server
     public class MDServer : MarshalByRefObject, IMDServer
     {
         private DataTable mdTable;
-        private string mdserver_name = "m - ";
+        private string mdserver_name = "m-";
         private string filename;
         private int numServer = 0;
         private int failServer = 0;
@@ -60,7 +60,7 @@ namespace MetaData_Server
             mdserver_name += numServer;
             mdTable.TableName.Insert(0, mdserver_name);
             numServer++;
-            debug("Metadata server" + mdserver_name + "created.");
+            debug("Metadata server " + mdserver_name + " created.");
         }
 
         public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)
