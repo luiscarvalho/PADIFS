@@ -40,8 +40,9 @@ namespace MetaData_Server
     public class MDServer : MarshalByRefObject, IMDServer
     {
         private DataTable mdTable;
-        private string mdserver_name;
+        private string mdserver_name = "m - ";
         private string filename;
+        private int numServer = 0;
         private int failServer = 0;
         private int nb_dataservers;
         private int read_quorum;
@@ -57,6 +58,9 @@ namespace MetaData_Server
             mdTable.Columns.Add("Read_Quorum", typeof(int));
             mdTable.Columns.Add("Write_Quorum", typeof(int));
             mdTable.Columns.Add("Data Servers", typeof(List<KeyValuePair<string, string>>));
+            mdserver_name += numServer;
+            mdTable.TableName.Insert(0, mdserver_name);
+            numServer++;
             debug("Metadata server" + mdserver_name + "created.");
         }
 
@@ -106,14 +110,14 @@ namespace MetaData_Server
 
         }
 
-        public void FAIL()
+        public void FAIL(string mdserver)
         {
             mdTable.EndInit();
             mdTable.EndLoadData();
             failServer = 1;
         }
 
-        public void RECOVER()
+        public void RECOVER(string mdserver)
         {
             if (failServer == 0)
             {
