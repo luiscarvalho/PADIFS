@@ -10,13 +10,14 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace PuppetMaster
 {
     public partial class PuppetMasterForm : Form
     {
 
-        string[] script;
+        private string[] script;
         Hashtable metadataList = new Hashtable();
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
@@ -37,22 +38,31 @@ namespace PuppetMaster
         {
             string scriptPath = scriptPathTX.Text;
 
-            if (scriptPath == null)
+            if (scriptPath.Equals(""))
             {
                 infoTX.Text = infoTX.Text + "You must enter a file name!" + "\r\n";
             }
             else
             {
-                infoTX.Text = scriptPath;
-                string[] script = System.IO.File.ReadAllLines(scriptPath);
+                infoTX.Text = infoTX.Text + scriptPath + "\r\n";
+                //C:\Users\Luís\Desktop\sample_script_checkpoint.txt
+                System.IO.File.OpenRead(@scriptPath);
+                script = System.IO.File.ReadAllLines(@scriptPath);
             }
         }
 
         private void runbt_Click(object sender, EventArgs e)
         {
-            foreach (string command in script)
+            if (script == null)
             {
-                executeCommand(command);
+                infoTX.Text = infoTX.Text + "Erro na leitura do script!" + "\r\n";
+            }
+            else
+            {
+                foreach (string command in script)
+                {
+                    executeCommand(command);
+                }
             }
         }
 
@@ -139,8 +149,9 @@ namespace PuppetMaster
             {
                 // comando que lança um processo metadata server
                 string[] nserver = command[1].Split('-');
-                System.Diagnostics.Process.Start(".\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " 808"+nserver[1]);
-                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with port: " + "808"+nserver[1] + "\r\n";
+                infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
+                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory()+"\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + "808" + nserver[1]);
+                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with port: " + "808" + nserver[1] + "\r\n";
                 metadataList.Add(command[1], "endereço");
             }
 
