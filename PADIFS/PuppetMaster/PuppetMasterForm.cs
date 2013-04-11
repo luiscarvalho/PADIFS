@@ -20,6 +20,7 @@ namespace PuppetMaster
         Hashtable metadataList = new Hashtable();
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
+        private DebugDelegate debug;
 
         public PuppetMasterForm()
         {
@@ -132,7 +133,7 @@ namespace PuppetMaster
             {
                 IMDServer mdsrecover = (IMDServer)Activator.GetObject(typeof(IMDServer)
                     , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsrecover.RECOVER(" ");
+                mdsrecover.RECOVER(" ", new DebugDelegate(debug));
             }
             else
             {
