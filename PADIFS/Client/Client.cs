@@ -12,8 +12,7 @@ namespace Client
 {
     class Client
     {
-        static int nclient = 0;
-        static string clientname = "c-";
+        static string clientname;
 
         static void Main(string[] args)
         {
@@ -21,20 +20,21 @@ namespace Client
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
-            clientname += nclient.ToString();
-            System.Console.WriteLine("Client " + clientname + " on");
-            nclient++;
+            clientname += args[0];
+            System.Console.WriteLine("Client " + clientname + " on" + Environment.NewLine);
             System.Console.ReadLine();
         }
     }
 
+    [Serializable]
     public class Cliente : MarshalByRefObject, IClient
     {
 
         public void CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, DebugDelegate debug)
         {
-            Console.WriteLine("Create : cheguei aqui!" + "\r\n");
+            debug("Create : cheguei aqui!" + "\r\n");
+            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:8080/MetaData_Server");
             mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum,debug);

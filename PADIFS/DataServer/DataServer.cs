@@ -23,7 +23,7 @@ namespace DataServer
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(DServer), "Data_Server",
             WellKnownObjectMode.Singleton);
             servername += dserver.ToString();
-            System.Console.WriteLine("Data Server d-" + dserver + " on");
+            System.Console.WriteLine("Data Server d-" + dserver + " on" + Environment.NewLine);
             dserver++;
             System.Console.ReadLine();
         }

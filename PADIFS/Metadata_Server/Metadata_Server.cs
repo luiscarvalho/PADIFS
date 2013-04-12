@@ -60,7 +60,7 @@ namespace MetaData_Server
             mdserver_name += numServer;
             mdTable.TableName.Insert(0, mdserver_name);
             numServer++;
-            debug("Metadata server " + mdserver_name + " created.");
+            debug("Metadata server " + mdserver_name + " created." + Environment.NewLine);
         }
 
         public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)

@@ -1,4 +1,5 @@
 ﻿using PADICommonTypes;
+using Client;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,12 +7,16 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.Remoting;
+using System.Runtime.Remoting.Activation;
+using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
+using System.Runtime.Remoting.Proxies;
 
 namespace PuppetMaster
 {
@@ -127,12 +132,12 @@ namespace PuppetMaster
 
         private void Fail(string[] command)
         {
-            
+
             if (metadataList.Contains(command[1]))
             {
-                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                 mdsFail.FAIL(command[1], debug);
+                IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                   , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsFail.FAIL(command[1], debug);
             }
             else if (dataserverList.Contains(command[1]))
             {
@@ -143,7 +148,8 @@ namespace PuppetMaster
             else
             {
                 infoTX.Text = infoTX.Text + "The process " + command[1] + "does not exist!";
-            }        }
+            }
+        }
 
         private void ExeScript(string[] command)
         {
@@ -156,7 +162,7 @@ namespace PuppetMaster
             else
             {
                 infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
-            }    
+            }
         }
 
         private void Delete(string[] command)
@@ -197,9 +203,9 @@ namespace PuppetMaster
             }
             else if (metadataList.Contains(command[1]))
             {
-                 IMDServer mdsDump = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                 mdsDump.DUMP();
+                IMDServer mdsDump = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                   , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsDump.DUMP();
             }
             else if (dataserverList.Contains(command[1]))
             {
@@ -348,14 +354,11 @@ namespace PuppetMaster
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
+                Thread.Sleep(3000);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                    , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
                 Thread t = new Thread(delegate() { cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug); });
                 t.Start();
-
-                while (t.IsAlive)
-                    Application.DoEvents();
-                //cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
         }
 

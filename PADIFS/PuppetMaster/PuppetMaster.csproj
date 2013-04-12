@@ -82,6 +82,18 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Client\Client.csproj">
+      <Project>{45f49422-c4a4-4418-b8cc-0fdf80be5cdd}</Project>
+      <Name>Client</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DataServer\DataServer.csproj">
+      <Project>{33d42316-22f9-4065-b761-19289b0b8ac3}</Project>
+      <Name>DataServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Metadata_Server\Metadata_Server.csproj">
+      <Project>{5b0fcce3-8235-4ab8-b9aa-847666acb494}</Project>
+      <Name>Metadata_Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PADICommonTypes\PADICommonTypes.csproj">
       <Project>{f2c1ba9e-6b92-458e-b2df-31a900661510}</Project>
       <Name>PADICommonTypes</Name>
