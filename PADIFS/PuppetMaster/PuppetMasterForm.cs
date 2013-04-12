@@ -365,7 +365,7 @@ namespace PuppetMaster
 
                     // while (t.IsAlive)
                     //     Application.DoEvents();
-                    //cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
+                    cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
                     infoTX.Text = infoTX.Text + "could not locate de cliente" + "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
                 }
             }

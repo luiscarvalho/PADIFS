@@ -20,7 +20,7 @@ namespace Client
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
             clientname += nclient.ToString();
