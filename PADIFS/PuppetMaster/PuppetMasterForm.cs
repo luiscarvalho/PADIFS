@@ -52,7 +52,6 @@ namespace PuppetMaster
             {
                 infoTX.Text = infoTX.Text + scriptPath + "\r\n";
                 //C:\Users\Luís\Desktop\sample_script_checkpoint.txt
-                System.IO.File.OpenRead(@scriptPath);
                 script = System.IO.File.ReadAllLines(@scriptPath);
             }
         }
