@@ -73,7 +73,6 @@ namespace DataServer
         {
             IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
                 , "tcp://localhost:8080/MetaData_Server");
-
             mdserverRegister.RegisteDServer(this.dserver_name, port);
         }
 

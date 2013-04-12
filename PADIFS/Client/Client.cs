@@ -10,6 +10,7 @@ using PADICommonTypes;
 
 namespace Client
 {
+    [Serializable]
     class Client
     {
         static string clientname;
@@ -20,15 +21,22 @@ namespace Client
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
+            Cliente c = new Cliente(args[0]);
+            RemotingServices.Marshal(c, "ClientRemote", typeof(Cliente));
             clientname += args[0];
             System.Console.WriteLine("Client " + clientname + " on" + Environment.NewLine);
             System.Console.ReadLine();
         }
     }
 
-    [Serializable]
     public class Cliente : MarshalByRefObject, IClient
     {
+        string cname;
+
+        public Cliente(string clientname)
+        {
+            this.cname = clientname;
+        }
 
         public void CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, DebugDelegate debug)

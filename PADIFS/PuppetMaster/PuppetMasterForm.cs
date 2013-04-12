@@ -354,11 +354,9 @@ namespace PuppetMaster
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
-                Thread.Sleep(3000);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
-                Thread t = new Thread(delegate() { cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug); });
-                t.Start();
+                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
         }
 
