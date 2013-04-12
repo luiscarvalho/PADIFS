@@ -71,10 +71,11 @@ namespace MetaData_Server
             //debug("Metadata server " + mdserver_name + " created.");
         }
 
-        public void RegisteDServer(string dservername, string port)
+        public bool RegisteDServer(string dservername, string port)
         {
             System.Console.WriteLine("Metadata server " + mdserver_name + ": "+ dservername +" registered.");
             dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+            return true;
         }
         public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)
         {
