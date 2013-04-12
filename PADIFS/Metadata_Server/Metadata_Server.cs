@@ -20,7 +20,7 @@ namespace MetaData_Server
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
-            ChannelServices.RegisterChannel(channel, true);
+            ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
             DebugDelegate debug = new DebugDelegate(Debug);
@@ -29,7 +29,7 @@ namespace MetaData_Server
             RemotingServices.Marshal(mds, "MetaData_Server", typeof(MDServer));
 
             //servername = args[0];
-            System.Console.WriteLine("Metadata Server " + args[0] + " on");
+            System.Console.WriteLine("MetaData Server " + args[0] + " start with port " + args[1]);
             System.Console.ReadLine();
         }
 
@@ -68,19 +68,20 @@ namespace MetaData_Server
 
 
             //numServer++;
-            debug("Metadata server " + mdserver_name + " created.");
+            //debug("Metadata server " + mdserver_name + " created.");
         }
 
         public void RegisteDServer(string dservername, string port)
         {
-            System.Console.WriteLine("Metadata server " + mdserver_name + ":"+dservername+"registe.");
+            System.Console.WriteLine("Metadata server " + mdserver_name + ": "+ dservername +" registered.");
             dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
         }
         public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)
         {
+            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             dataServers.Add(new KeyValuePair<string, string>("d-0", "0"));
             mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
-            debug("File" + fname + "created.");
+            //debug("File" + fname + "created.");
         }
 
         public void DELETE(string fname, DebugDelegate debug)

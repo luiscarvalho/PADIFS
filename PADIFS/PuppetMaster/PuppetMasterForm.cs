@@ -60,7 +60,7 @@ namespace PuppetMaster
         {
             if (script == null)
             {
-                infoTX.Text = infoTX.Text + "Erro na leitura do script!" + "\r\n";
+                //infoTX.Text = infoTX.Text + "Erro na leitura do script!" + "\r\n";
             }
             else
             {
@@ -355,6 +355,7 @@ namespace PuppetMaster
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
+                Thread.Sleep(1000);
                 cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
         }
