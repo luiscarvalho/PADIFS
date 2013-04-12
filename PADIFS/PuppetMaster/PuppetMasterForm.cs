@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Threading;
 
 namespace PuppetMaster
 {
@@ -149,20 +150,21 @@ namespace PuppetMaster
             if (clientList.Contains(command[1]))
             {
                 IClient cExeScript = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cExeScript.EXESCRIPT(command[1], command[2]);
             }
             else
             {
                 infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
-            }        }
+            }    
+        }
 
         private void Delete(string[] command)
         {
             if (clientList.Contains(command[1]))
             {
                 IClient cDelete = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cDelete.DELETE(command[1], command[2], debug);
             }
             else
@@ -176,7 +178,7 @@ namespace PuppetMaster
             if (clientList.Contains(command[1]))
             {
                 IClient cClose = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cClose.CLOSE(command[1], command[2], debug);
             }
             else
@@ -303,7 +305,7 @@ namespace PuppetMaster
             {
                 // comando que lança um processo dataserver
                 string[] nserver = command[1].Split('-');
-                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe", command[1].ToString() + " :807" + nserver[1].ToString());
+                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe", command[1].ToString() + " 807" + nserver[1].ToString());
                 infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with port: " + "807" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "807" + nserver[1]);
             }
@@ -323,7 +325,7 @@ namespace PuppetMaster
                 // comando que lança um processo metadata server
                 string[] nserver = command[1].Split('-');
                 infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
-                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + "808" + nserver[1]);
+                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
                 infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with port: " + "808" + nserver[1] + "\r\n";
                 metadataList.Add(command[1], "808" + nserver[1]);
             }
@@ -337,7 +339,7 @@ namespace PuppetMaster
                 // Commands client to create a file
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCreate.CREATE(command[1], command[2], Convert.ToInt32(command[3]), Convert.ToInt32(command[4]), Convert.ToInt32(command[5]), debug);
+                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
             else
             {
@@ -345,10 +347,15 @@ namespace PuppetMaster
                 string[] nclient = command[1].Split('-');
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
-                clientList.Add(command[1], "807" + nclient[1]);
+                clientList.Add(command[1], "806" + nclient[1]);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCreate.CREATE(command[1], command[2], Convert.ToInt32(command[3]), Convert.ToInt32(command[4]), Convert.ToInt32(command[5]), debug);
+                Thread t = new Thread(delegate() { cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug); });
+                t.Start();
+
+                while (t.IsAlive)
+                    Application.DoEvents();
+                //cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
         }
 
@@ -367,7 +374,7 @@ namespace PuppetMaster
                 string[] nclient = command[1].Split('-');
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
-                clientList.Add(command[1], "807" + nclient[1]);
+                clientList.Add(command[1], "806" + nclient[1]);
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cOpen.OPEN(command[1], command[2], debug);

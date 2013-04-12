@@ -17,12 +17,12 @@ namespace Client
 
         static void Main(string[] args)
         {
-            TcpChannel channel = new TcpChannel();
+            TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
             clientname += nclient.ToString();
-            System.Console.WriteLine("Client c-" + clientname + " on");
+            System.Console.WriteLine("Client " + clientname + " on");
             nclient++;
             System.Console.ReadLine();
         }
@@ -34,9 +34,10 @@ namespace Client
         public void CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, DebugDelegate debug)
         {
+            Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8086/MetaData_Server");
-            mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum,new DebugDelegate(debug));
+            , "tcp://localhost:8080/MetaData_Server");
+            mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum,debug);
         }
 
         public void OPEN(string clientname, string filename, DebugDelegate debug)
