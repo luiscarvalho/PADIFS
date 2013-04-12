@@ -11,10 +11,11 @@ using System.IO;
 
 namespace DataServer
 {
+    [Serializable]
     class DataServer
     {
-        static int dserver = 0;
-        static string servername = "d-";
+        //static int dserver;
+        //static string servername;
 
         static void Main(string[] args)
         {
@@ -22,9 +23,15 @@ namespace DataServer
             ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(DServer), "Data_Server",
             WellKnownObjectMode.Singleton);
-            servername += dserver.ToString();
-            System.Console.WriteLine("Data Server d-" + dserver + " on");
-            dserver++;
+            DebugDelegate debug = new DebugDelegate(Debug);
+
+            DServer ds = new DServer(args[0], debug);
+            RemotingServices.Marshal(ds, "Data_Server", typeof(DServer));
+
+            ds.Register(args[1]);
+            //servername = dserver.ToString();
+            //dserver++;
+            System.Console.WriteLine("Data Server " + args[0] + " start with port " + args[1]);
             System.Console.ReadLine();
         }
 
@@ -36,7 +43,8 @@ namespace DataServer
 
     public class DServer : MarshalByRefObject, IDServer
     {
-        private string dserver_name = "d - ";
+        private string dserver_name;
+        private string port;
         private List<string> dsrequests = new List<string>();
         private int numServer = 0;
         private int freezeServer = 0;
@@ -47,18 +55,26 @@ namespace DataServer
         private int fileversion = 0;
         private DebugDelegate debug;
 
-        public DServer(DebugDelegate debug)
+        public DServer(string dservername, DebugDelegate debug)
         {
-            dserver_name += numServer;
+            this.dserver_name = dservername;
             freezeServer = 0;
             serverpath = Directory.GetCurrentDirectory();
-            serverpath += Path.Combine(dserver_name);
+            serverpath += Path.Combine(this.dserver_name);
             if (!Directory.Exists(serverpath))
             {
                 Directory.CreateDirectory(serverpath);
             }
             numServer++;
             debug("Data server" + dserver_name + "created.");
+        }
+
+        public void Register(string port)
+        {
+            IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                , "tcp://localhost:8080/MetaData_Server");
+
+            mdserverRegister.RegisteDServer(this.dserver_name, port);
         }
 
         public void READ(string filename, string semantics, DebugDelegate debug)

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
+using Client;
 
 namespace PuppetMaster
 {
@@ -47,7 +48,6 @@ namespace PuppetMaster
             {
                 infoTX.Text = infoTX.Text + scriptPath + "\r\n";
                 //C:\Users\Luís\Desktop\sample_script_checkpoint.txt
-                System.IO.File.OpenRead(@scriptPath);
                 script = System.IO.File.ReadAllLines(@scriptPath);
             }
         }
@@ -62,7 +62,7 @@ namespace PuppetMaster
             {
                 foreach (string command in script)
                 {
-                    infoTX.Text = infoTX.Text + command;
+                    //infoTX.Text = infoTX.Text + command;
                     executeCommand(command);
                 }
             }
@@ -123,6 +123,7 @@ namespace PuppetMaster
                 default:
                     break;
             }
+           // Thread.Sleep(1000);
         }
 
         private void Fail(string[] command)
@@ -337,7 +338,7 @@ namespace PuppetMaster
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
-                IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
+                Cliente cCreate = (Cliente)Activator.GetObject(typeof(Cliente)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
             }
@@ -348,14 +349,25 @@ namespace PuppetMaster
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
-                IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                Thread t = new Thread(delegate() { cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug); });
-                t.Start();
 
-                while (t.IsAlive)
-                    Application.DoEvents();
-                //cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
+                //Thread.Sleep(1000);
+
+                IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:"+clientList[command[1]]+"/ClientRemote");
+                if (cCreate == null)
+                {
+                    infoTX.Text = infoTX.Text+" locate de cliente"+"tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                }
+                else
+                {
+                    // Thread t = new Thread(delegate() { cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug); });
+                    //t.Start();
+
+                    // while (t.IsAlive)
+                    //     Application.DoEvents();
+                    //cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
+                    infoTX.Text = infoTX.Text + "could not locate de cliente" + "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                }
             }
         }
 

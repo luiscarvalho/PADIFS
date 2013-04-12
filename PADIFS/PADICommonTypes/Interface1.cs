@@ -18,6 +18,7 @@ namespace PADICommonTypes
         void RECOVER(string mdserver, DebugDelegate debug);
         void FAIL(string mdserver, DebugDelegate debug);
         void DUMP();
+        void RegisteDServer(string dservername, string port);
     }
 
    public interface IDServer
