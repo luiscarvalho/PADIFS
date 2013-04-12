@@ -18,7 +18,7 @@ namespace Client
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
-            ChannelServices.RegisterChannel(channel, false);
+            ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
             Cliente c = new Cliente(args[0]);
