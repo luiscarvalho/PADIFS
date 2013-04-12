@@ -131,12 +131,12 @@ namespace PuppetMaster
 
         private void Fail(string[] command)
         {
-            
+
             if (metadataList.Contains(command[1]))
             {
-                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                 mdsFail.FAIL(command[1], debug);
+                IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                   , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsFail.FAIL(command[1], debug);
             }
             else if (dataserverList.Contains(command[1]))
             {
@@ -161,7 +161,7 @@ namespace PuppetMaster
             else
             {
                 infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
-            }    
+            }
         }
 
         private void Delete(string[] command)
@@ -202,9 +202,9 @@ namespace PuppetMaster
             }
             else if (metadataList.Contains(command[1]))
             {
-                 IMDServer mdsDump = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                 mdsDump.DUMP();
+                IMDServer mdsDump = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                   , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsDump.DUMP();
             }
             else if (dataserverList.Contains(command[1]))
             {

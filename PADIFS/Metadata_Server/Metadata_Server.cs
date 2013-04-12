@@ -20,7 +20,7 @@ namespace MetaData_Server
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
-            ChannelServices.RegisterChannel(channel, false);
+            ChannelServices.RegisterChannel(channel, true);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
             DebugDelegate debug = new DebugDelegate(Debug);
@@ -76,7 +76,6 @@ namespace MetaData_Server
             System.Console.WriteLine("Metadata server " + mdserver_name + ":"+dservername+"registe.");
             dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
         }
-
         public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)
         {
             dataServers.Add(new KeyValuePair<string, string>("d-0", "0"));
