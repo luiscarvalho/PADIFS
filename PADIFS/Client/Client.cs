@@ -7,15 +7,13 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using PADICommonTypes;
-using System.Net.Sockets;
 
 namespace Client
 {
     [Serializable]
     class Client
     {
-        static int nclient = 0;
-        static string clientname = "c-";
+        static string clientname;
 
         static void Main(string[] args)
         {
@@ -23,35 +21,31 @@ namespace Client
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
-            clientname += nclient.ToString();
-
-            Cliente c = new Cliente();
+            Cliente c = new Cliente(args[0]);
             RemotingServices.Marshal(c, "ClientRemote", typeof(Cliente));
-
-            System.Console.WriteLine("Client " + args[0] + " on in port: " + args[1]);
-            nclient++;
+            clientname += args[0];
+            System.Console.WriteLine("Client " + clientname + " on" + Environment.NewLine);
             System.Console.ReadLine();
         }
     }
 
     public class Cliente : MarshalByRefObject, IClient
     {
+        string cname;
 
+        public Cliente(string clientname)
+        {
+            this.cname = clientname;
+        }
 
         public void CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, DebugDelegate debug)
         {
-            Console.WriteLine("Create : cheguei aqui!" + "\r\n");
+            debug("Create : cheguei aqui!" + "\r\n");
+            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:8080/MetaData_Server");
-            try
-            {
-                mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, debug);
-            }
-            catch (SocketException)
-            {
-                Console.WriteLine("Create : foi aqui!" + "\r\n");
-            }
+            mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum,debug);
         }
 
         public void OPEN(string clientname, string filename, DebugDelegate debug)
