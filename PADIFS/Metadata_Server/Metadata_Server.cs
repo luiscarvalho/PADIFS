@@ -131,5 +131,10 @@ namespace MetaData_Server
                 debug("MetaData_Server" + mdserver_name + "is back on");
             }
         }
+
+        public void DUMP()
+        {
+            // print values
+        }
     }
 }

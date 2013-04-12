@@ -87,10 +87,10 @@ namespace PuppetMaster
                     Unfreeze(command);
                     break;
                 case "FAIL":
-                    //Fail(command);
+                    Fail(command);
                     break;
                 case "FREEZE":
-                    //Freeze(command);
+                    Freeze(command);
                     break;
                 case "CREATE":
                     Create(command);
@@ -99,25 +99,168 @@ namespace PuppetMaster
                     Open(command);
                     break;
                 case "CLOSE":
-                    //closeFile(command);
+                    Close(command);
                     break;
                 case "READ":
-                    //read(command);
+                    Read(command);
                     break;
                 case "WRITE":
                     Write(command);
                     break;
                 case "COPY":
-                    //copy(command);
+                    Copy(command);
                     break;
                 case "DUMP":
-                    //dump(command);
+                    Dump(command);
+                    break;
+                case "DELETE":
+                    Delete(command);
                     break;
                 case "EXESCRIPT":
-                    //exescript(command);
+                    ExeScript(command);
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void Fail(string[] command)
+        {
+            
+            if (metadataList.Contains(command[1]))
+            {
+                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                 mdsFail.FAIL(command[1], debug);
+            }
+            else if (dataserverList.Contains(command[1]))
+            {
+                IDServer dsFail = (IDServer)Activator.GetObject(typeof(IDServer)
+                    , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
+                dsFail.FAIL(command[1], debug);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "The process " + command[1] + "does not exist!";
+            }        }
+
+        private void ExeScript(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                IClient cExeScript = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                cExeScript.EXESCRIPT(command[1], command[2]);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
+            }        }
+
+        private void Delete(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                IClient cDelete = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                cDelete.DELETE(command[1], command[2], debug);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
+            }
+        }
+
+        private void Close(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                IClient cClose = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote";
+                cClose.CLOSE(command[1], command[2], debug);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
+            }
+        }
+
+        private void Dump(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                IClient cDump = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                cDump.DUMP();
+            }
+            else if (metadataList.Contains(command[1]))
+            {
+                 IMDServer mdsDump = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                 mdsDump.DUMP();
+            }
+            else if (dataserverList.Contains(command[1]))
+            {
+                IDServer dsDump = (IDServer)Activator.GetObject(typeof(IDServer)
+                    , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
+                dsDump.DUMP();
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "The process " + command[1] + "does not exist!";
+            }
+        }
+
+        private void Copy(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                IClient cCopy = (IClient)Activator.GetObject(typeof(IClient)
+                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                cCopy.COPY(command[1], command[2], command[3], command[4], command[5], debug);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "Client " + command[1] + "does not exist!";
+            }
+        }
+
+        private void Freeze(string[] command)
+        {
+            if (dataserverList.Contains(command[1]))
+            {
+                // Freeze data server
+                IDServer dsFreeze = (IDServer)Activator.GetObject(typeof(IDServer)
+                   , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
+                dsFreeze.FREEZE(command[1], debug);
+            }
+            else
+            {
+                infoTX.Text = infoTX.Text + "Data Server " + command[1] + "does not exist!";
+            }
+        }
+
+        private void Read(string[] command)
+        {
+            if (clientList.Contains(command[1]))
+            {
+                // Commands client to read a file
+                IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
+                   , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
+                cRead.READ(command[1], command[2], command[3], debug);
+            }
+            else
+            {
+                // comando que lança um processo clien... NESTE CASO NAO SEI SE LANCAMOS O PROCESSO CLIENTE
+                string[] nclient = command[1].Split('-');
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                clientList.Add(command[1], "806" + nclient[1]);
+                IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
+                   , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
+                cRead.READ(command[1], command[2], command[3], debug);
             }
         }
 
@@ -125,35 +268,35 @@ namespace PuppetMaster
         {
             if (clientList.Contains(command[1]))
             {
-                // Commands client to create a file
+                // Commands client to write a file
                 IClient cWrite = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text, debug); 
+                cWrite.WRITE(command[1], command[2], text, debug);
             }
             else
             {
                 // comando que lança um processo clien... NESTE CASO NAO SEI SE LANCAMOS O PROCESSO CLIENTE
                 string[] nclient = command[1].Split('-');
-                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 808" + nclient[1]);
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 807" + nclient[1] + "\r\n";
-                metadataList.Add(command[1], "807" + nclient[1]);
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                clientList.Add(command[1], "806" + nclient[1]);
                 IClient cWrite = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text, debug); 
+                cWrite.WRITE(command[1], command[2], text, debug);
             }
         }
 
         private void Unfreeze(string[] command)
         {
-            if(dataserverList.Contains(command[1]))
+            if (dataserverList.Contains(command[1]))
             {
                 // Unfreeze data server
                 IDServer dsUnfreeze = (IDServer)Activator.GetObject(typeof(IDServer)
-                   , "tcp://localhost:" + dataserverList[command[1]] + "/ClientRemote");
+                   , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
                 dsUnfreeze.UNFREEZE(command[1], debug);
             }
             else
@@ -169,7 +312,7 @@ namespace PuppetMaster
         private void Recover(string[] command)
         {
 
-            if(metadataList.Contains(command[1]))
+            if (metadataList.Contains(command[1]))
             {
                 IMDServer mdsrecover = (IMDServer)Activator.GetObject(typeof(IMDServer)
                     , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
@@ -189,7 +332,7 @@ namespace PuppetMaster
 
         private void Create(string[] command)
         {
-            if(clientList.Contains(command[1]))
+            if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
@@ -200,9 +343,9 @@ namespace PuppetMaster
             {
                 // comando que lança um processo client
                 string[] nclient = command[1].Split('-');
-                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 808" + nclient[1]);
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 807" + nclient[1] + "\r\n";
-                metadataList.Add(command[1], "807" + nclient[1]);
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                clientList.Add(command[1], "807" + nclient[1]);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cCreate.CREATE(command[1], command[2], Convert.ToInt32(command[3]), Convert.ToInt32(command[4]), Convert.ToInt32(command[5]), debug);
@@ -211,7 +354,7 @@ namespace PuppetMaster
 
         private void Open(string[] command)
         {
-            if(clientList.Contains(command[1]))
+            if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
@@ -222,9 +365,9 @@ namespace PuppetMaster
             {
                 // comando que lança um processo client
                 string[] nclient = command[1].Split('-');
-                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 808" + nclient[1]);
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 807" + nclient[1] + "\r\n";
-                metadataList.Add(command[1], "807" + nclient[1]);
+                System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                clientList.Add(command[1], "807" + nclient[1]);
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 cOpen.OPEN(command[1], command[2], debug);

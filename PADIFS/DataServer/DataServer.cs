@@ -165,5 +165,10 @@ namespace DataServer
             failServer = 0;
             debug("Server " + dserver_name + "is back online.");
         }
+
+        public void DUMP()
+        {
+            // print values
+        }
     }
 }

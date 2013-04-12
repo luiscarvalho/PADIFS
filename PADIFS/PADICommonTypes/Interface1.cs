@@ -17,6 +17,7 @@ namespace PADICommonTypes
         void DELETE(string filename, DebugDelegate debug);
         void RECOVER(string mdserver, DebugDelegate debug);
         void FAIL(string mdserver, DebugDelegate debug);
+        void DUMP();
     }
 
    public interface IDServer
@@ -27,6 +28,7 @@ namespace PADICommonTypes
         void UNFREEZE(string dserver, DebugDelegate debug);
         void FAIL(string dserver, DebugDelegate debug);
         void RECOVER(string dserver, DebugDelegate debug);
+        void DUMP();
     }
 
     public interface IClient 
@@ -38,5 +40,8 @@ namespace PADICommonTypes
         void READ(string clientname, string filename, string semantics, DebugDelegate debug);
         void WRITE(string clientname, string filename, byte[] content, DebugDelegate debug);
         void DELETE(string clientname, string filename, DebugDelegate debug);
+        void COPY(string clientname, string fileregister1, string semantics, string fileregister2, string salt, DebugDelegate debug);
+        void DUMP();
+        void EXESCRIPT(string clientname, string script);
     }
 }
