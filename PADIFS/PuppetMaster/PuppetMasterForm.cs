@@ -60,13 +60,13 @@ namespace PuppetMaster
         {
             if (script == null)
             {
-                //infoTX.Text = infoTX.Text + "Erro na leitura do script!" + "\r\n";
+                infoTX.Text = infoTX.Text + "Erro na leitura do script!" + "\r\n";
             }
             else
             {
                 foreach (string command in script)
                 {
-                    infoTX.Text = infoTX.Text + command;
+                    //infoTX.Text = infoTX.Text + command;
                     executeCommand(command);
                 }
             }
@@ -287,7 +287,7 @@ namespace PuppetMaster
                 // comando que lança um processo clien... NESTE CASO NAO SEI SE LANCAMOS O PROCESSO CLIENTE
                 string[] nclient = command[1].Split('-');
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + " with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cWrite = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
@@ -311,7 +311,7 @@ namespace PuppetMaster
                 // comando que lança um processo dataserver
                 string[] nserver = command[1].Split('-');
                 System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe", command[1].ToString() + " 807" + nserver[1].ToString());
-                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + "with port: " + "807" + nserver[1] + "\r\n";
+                infoTX.Text = infoTX.Text + "Start data server: " + command[1] + " with port: " + "807" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "807" + nserver[1]);
             }
         }
@@ -331,7 +331,7 @@ namespace PuppetMaster
                 string[] nserver = command[1].Split('-');
                 infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
                 System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
-                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + "with port: " + "808" + nserver[1] + "\r\n";
+                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + " with port: " + "808" + nserver[1] + "\r\n";
                 metadataList.Add(command[1], "808" + nserver[1]);
             }
 
@@ -351,7 +351,7 @@ namespace PuppetMaster
                 // comando que lança um processo client
                 string[] nclient = command[1].Split('-');
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
-                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + "with port: " + " 806" + nclient[1] + "\r\n";
+                infoTX.Text = infoTX.Text + "Start Client: " + command[1] + " with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");

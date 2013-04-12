@@ -28,10 +28,10 @@ namespace DataServer
             DServer ds = new DServer(args[0], debug);
             RemotingServices.Marshal(ds, "Data_Server", typeof(DServer));
 
-            ds.Register(args[1]);
             //servername = dserver.ToString();
             //dserver++;
             System.Console.WriteLine("Data Server " + args[0] + " start with port " + args[1]);
+            ds.Register(args[1]);
             System.Console.ReadLine();
         }
 
@@ -47,7 +47,7 @@ namespace DataServer
         private string port;
         private List<string> dsrequests = new List<string>();
         private int numServer = 0;
-        private int freezeServer = 0;
+        private int freezeServer;
         private int failServer = 0;
         private string serverpath;
         private string filename;
@@ -58,9 +58,9 @@ namespace DataServer
         public DServer(string dservername, DebugDelegate debug)
         {
             this.dserver_name = dservername;
-            freezeServer = 0;
-            serverpath = Directory.GetCurrentDirectory();
-            serverpath += Path.Combine(this.dserver_name);
+            this.freezeServer = 1;
+            this.serverpath = Directory.GetCurrentDirectory();
+            this.serverpath += Path.Combine(this.dserver_name);
             if (!Directory.Exists(serverpath))
             {
                 Directory.CreateDirectory(serverpath);
@@ -73,7 +73,11 @@ namespace DataServer
         {
             IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
                 , "tcp://localhost:8080/MetaData_Server");
-            mdserverRegister.RegisteDServer(this.dserver_name, port);
+            if (mdserverRegister.RegisteDServer(this.dserver_name, port))
+            {
+                this.freezeServer = 0;
+                System.Console.WriteLine("Data Server " + this.dserver_name + " registered");
+            }
         }
 
         public void READ(string filename, string semantics, DebugDelegate debug)
