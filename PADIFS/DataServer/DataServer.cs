@@ -81,11 +81,11 @@ namespace DataServer
                 {
                     foreach (string fname in Directory.GetFiles(serverpath))
                     {
-                        if (fname.Equals(filename))
+                        if (fname.Equals(serverpath + "\\" + filename))
                         {
                             System.Console.WriteLine("Encontrei ficheiro!");
-                            File.OpenRead(serverpath += filename);
-                            File.ReadAllLines(serverpath += filename);
+                            System.Diagnostics.Process.Start(serverpath + "\\" + filename);
+                            //File.ReadAllLines(serverpath + "\\" + filename);
                         }
                     }
                 }

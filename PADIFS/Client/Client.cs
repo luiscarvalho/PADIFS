@@ -54,15 +54,16 @@ namespace Client
 
         public void OPEN(string clientname, string filename)
         {
+            System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8086/MetaData_Server");
+            , "tcp://localhost:8080/MetaData_Server");
             mdsopen.OPEN(filename);
         }
 
         public void CLOSE(string clientname, string filename)
         {
             IMDServer mdsclose = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8086/MetaData_Server");
+            , "tcp://localhost:8080/MetaData_Server");
             mdsclose.CLOSE(filename);
         }
 

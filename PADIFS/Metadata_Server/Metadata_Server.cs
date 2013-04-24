@@ -83,7 +83,7 @@ namespace MetaData_Server
                 serverpath += Path.Combine(ds);
                 if (Directory.Exists(serverpath))
                 {
-                    File.Create(serverpath + "\\" + fname + ".txt");
+                    File.CreateText(serverpath + "\\" + fname + ".txt");
                 }
             }
 
@@ -106,9 +106,25 @@ namespace MetaData_Server
             {
                 if (dr["Filename"].ToString() == fname)
                 {
-                    dr.BeginEdit();
-                    Console.WriteLine(dr.ToString());
-                    dr.AcceptChanges();
+                   // dr.BeginEdit();
+                   Console.WriteLine("Found file!" + "\r\n");
+                   // dr.AcceptChanges();
+                }
+            }
+
+            foreach (KeyValuePair<string,string> dserver in dataServerList)
+            {
+                string ds = dserver.Key;
+                char ndserver = ds.ElementAt(ds.Length - 1);
+                string serverpath = Directory.GetCurrentDirectory();
+                serverpath += Path.Combine(ds);
+                if (Directory.Exists(serverpath))
+                {
+                    if(File.Exists(serverpath + "\\" + fname + ".txt")){
+                        IDServer dsOpen = (IDServer)Activator.GetObject(typeof(IDServer)
+                   , "tcp://localhost:807" + ndserver + "/Data_Server");
+                        dsOpen.READ(fname + ".txt", "verbose");
+                    }
                 }
             }
         }
