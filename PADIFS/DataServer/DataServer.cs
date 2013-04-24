@@ -23,9 +23,8 @@ namespace DataServer
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(DServer), "Data_Server",
             WellKnownObjectMode.Singleton);
-            DebugDelegate debug = new DebugDelegate(Debug);
 
-            DServer ds = new DServer(args[0], debug);
+            DServer ds = new DServer(args[0]);
             RemotingServices.Marshal(ds, "Data_Server", typeof(DServer));
 
             //servername = dserver.ToString();
@@ -33,11 +32,6 @@ namespace DataServer
             System.Console.WriteLine("Data Server " + args[0] + " start with port " + args[1]);
             ds.Register(args[1]);
             System.Console.ReadLine();
-        }
-
-        static void Debug(string mensagem)
-        {
-            Console.WriteLine(mensagem);
         }
     }
 
@@ -53,9 +47,8 @@ namespace DataServer
         private string filename;
         private byte[] filecontent;
         private int fileversion = 0;
-        private DebugDelegate debug;
 
-        public DServer(string dservername, DebugDelegate debug)
+        public DServer(string dservername)
         {
             this.dserver_name = dservername;
             this.freezeServer = 1;
@@ -80,7 +73,7 @@ namespace DataServer
             }
         }
 
-        public void READ(string filename, string semantics, DebugDelegate debug)
+        public void READ(string filename, string semantics)
         {
             if (failServer == 0)
             {
@@ -100,15 +93,15 @@ namespace DataServer
                 {
                     dsrequests.Add("READ/" + filename + "/" + semantics);
                 }
-                debug("File" + filename + "opened for read purposes");
+                //debug("File" + filename + "opened for read purposes");
             }
             else
             {
-                debug("Server" + dserver_name + "has failed");
+                //debug("Server" + dserver_name + "has failed");
             }
         }
 
-        public void WRITE(string filename, byte[] content, DebugDelegate debug)
+        public void WRITE(string filename, byte[] content)
         {
             if (failServer == 0)
             {
@@ -127,28 +120,28 @@ namespace DataServer
                 {
                     dsrequests.Add("WRITE/" + filename + "/" + content.ToString());
                 }
-                debug("File" + filename + "opened for write purposes");
+               // debug("File" + filename + "opened for write purposes");
             }
             else
             {
-                debug("Server" + dserver_name + "has failed");
+              //  debug("Server" + dserver_name + "has failed");
             }
         }
 
-        public void FREEZE(string dserver, DebugDelegate debug)
+        public void FREEZE(string dserver)
         {
             if (failServer == 0)
             {
                 freezeServer = 1;
-                debug("Requests holded.");
+               // debug("Requests holded.");
             }
             else
             {
-                debug("Server" + dserver_name + "has failed");
+              //  debug("Server" + dserver_name + "has failed");
             }
         }
 
-        public void UNFREEZE(string dserver, DebugDelegate debug)
+        public void UNFREEZE(string dserver)
         {
             if (failServer == 0)
             {
@@ -158,31 +151,31 @@ namespace DataServer
 
                     if (req[0].Equals("READ"))
                     {
-                        READ(req[1], req[2], new DebugDelegate(debug));
+                        READ(req[1], req[2]);
                     }
                     else if (req[0].Equals("WRITE"))
                     {
-                        WRITE(req[1], System.Text.Encoding.UTF8.GetBytes(req[2]), new DebugDelegate(debug));
+                        WRITE(req[1], System.Text.Encoding.UTF8.GetBytes(req[2]));
                     }
                 }
-                debug("Dealt with Requests.");
+               // debug("Dealt with Requests.");
             }
             else
             {
-                debug("Server" + dserver_name + "has failed");
+              //  debug("Server" + dserver_name + "has failed");
             }
         }
 
-        public void FAIL(string dserver, DebugDelegate debug)
+        public void FAIL(string dserver)
         {
             failServer = 1;
-            debug("Server " + dserver_name + "has failed.");
+          //  debug("Server " + dserver_name + "has failed.");
         }
 
-        public void RECOVER(string dserver, DebugDelegate debug)
+        public void RECOVER(string dserver)
         {
             failServer = 0;
-            debug("Server " + dserver_name + "is back online.");
+            //debug("Server " + dserver_name + "is back online.");
         }
 
         public void DUMP()

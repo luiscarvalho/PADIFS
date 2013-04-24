@@ -8,6 +8,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using PADICommonTypes;
+using System.IO;
 
 namespace MetaData_Server
 {
@@ -23,19 +24,12 @@ namespace MetaData_Server
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
-            DebugDelegate debug = new DebugDelegate(Debug);
-            
-            MDServer mds = new MDServer(args[0], debug);
+            MDServer mds = new MDServer(args[0]);
             RemotingServices.Marshal(mds, "MetaData_Server", typeof(MDServer));
 
             //servername = args[0];
             System.Console.WriteLine("MetaData Server " + args[0] + " start with port " + args[1]);
             System.Console.ReadLine();
-        }
-
-        static void Debug(string mensagem)
-        {
-            Console.WriteLine(mensagem);
         }
     }
 
@@ -43,17 +37,16 @@ namespace MetaData_Server
     {
         private DataTable mdTable;
         private string mdserver_name = "m-";
-        private string filename;
+        //private string filename;
         //private int numServer = 0;
         private int failServer = 0;
-        private int nb_dataservers;
-        private int read_quorum;
-        private int write_quorum;
-        private DebugDelegate debug;
+        //private int nb_dataservers;
+        //private int read_quorum;
+        //private int write_quorum;
         private List<KeyValuePair<string, string>> dataServerList;
         private List<KeyValuePair<string, string>> dataServers;
 
-        public MDServer(string mdsname, DebugDelegate debug)
+        public MDServer(string mdsname)
         {
             mdTable = new DataTable();
             dataServerList = new List<KeyValuePair<string, string>>();
@@ -77,26 +70,37 @@ namespace MetaData_Server
             dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
             return true;
         }
-        public void CREATE(string fname, int dservers, int rquorum, int wquorum, DebugDelegate debug)
+        public void CREATE(string fname, int dservers, int rquorum, int wquorum)
         {
             System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             dataServers.Add(new KeyValuePair<string, string>("d-0", "0"));
             mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
-            //debug("File" + fname + "created.");
+
+            foreach (KeyValuePair<string,string> dserver in dataServerList)
+            {
+                string ds = dserver.Key;
+                string serverpath = Directory.GetCurrentDirectory();
+                serverpath += Path.Combine(ds);
+                if (Directory.Exists(serverpath))
+                {
+                    File.Create(serverpath + "\\" + fname + ".txt");
+                }
+            }
+
+            System.Console.WriteLine("File " + fname + " created.");
+            System.Console.WriteLine(mdTable.ToString());
         }
 
-        public void DELETE(string fname, DebugDelegate debug)
+        public void DELETE(string fname)
         {
             foreach (DataRow dr in mdTable.Rows)
             {
                 if (dr["Filename"].ToString() == fname)
                     dr.Delete();
             }
-
-            debug("File" + fname + "deleted.");
         }
 
-        public void OPEN(string fname, DebugDelegate debug)
+        public void OPEN(string fname)
         {
             foreach (DataRow dr in mdTable.Rows)
             {
@@ -107,10 +111,9 @@ namespace MetaData_Server
                     dr.AcceptChanges();
                 }
             }
-            debug("File" + fname + "opened.");
         }
 
-        public void CLOSE(string fname, DebugDelegate debug)
+        public void CLOSE(string fname)
         {
             foreach (DataRow dr in mdTable.Rows)
             {
@@ -119,31 +122,27 @@ namespace MetaData_Server
                     dr.CancelEdit();
                     dr.EndEdit();
                 }
-                debug("File" + fname + "closed.");
             }
 
         }
 
-        public void FAIL(string mdserver, DebugDelegate debug)
+        public void FAIL(string mdserver)
         {
             mdTable.EndInit();
             mdTable.EndLoadData();
             failServer = 1;
-            debug("MetaData_Server" + mdserver_name + "has failed");
         }
 
-        public void RECOVER(string mdserver, DebugDelegate debug)
+        public void RECOVER(string mdserver)
         {
             if (failServer == 0)
             {
                //new MDServer(new DebugDelegate(debug));
-               debug("MetaData_Server" + mdserver_name + "on");
             }
             else
             {
                 this.mdTable = mdTable.Clone();
                 failServer = 0;
-                debug("MetaData_Server" + mdserver_name + "is back on");
             }
         }
 

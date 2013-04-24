@@ -27,7 +27,6 @@ namespace PuppetMaster
         Hashtable metadataList = new Hashtable();
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
-        private DebugDelegate debug;
 
         public PuppetMasterForm()
         {
@@ -136,13 +135,13 @@ namespace PuppetMaster
             {
                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsFail.FAIL(command[1], debug);
+                mdsFail.FAIL(command[1]);
             }
             else if (dataserverList.Contains(command[1]))
             {
                 IDServer dsFail = (IDServer)Activator.GetObject(typeof(IDServer)
                     , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
-                dsFail.FAIL(command[1], debug);
+                dsFail.FAIL(command[1]);
             }
             else
             {
@@ -170,7 +169,7 @@ namespace PuppetMaster
             {
                 IClient cDelete = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cDelete.DELETE(command[1], command[2], debug);
+                cDelete.DELETE(command[1], command[2]);
             }
             else
             {
@@ -184,7 +183,7 @@ namespace PuppetMaster
             {
                 IClient cClose = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cClose.CLOSE(command[1], command[2], debug);
+                cClose.CLOSE(command[1], command[2]);
             }
             else
             {
@@ -224,7 +223,7 @@ namespace PuppetMaster
             {
                 IClient cCopy = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCopy.COPY(command[1], command[2], command[3], command[4], command[5], debug);
+                cCopy.COPY(command[1], command[2], command[3], command[4], command[5]);
             }
             else
             {
@@ -239,7 +238,7 @@ namespace PuppetMaster
                 // Freeze data server
                 IDServer dsFreeze = (IDServer)Activator.GetObject(typeof(IDServer)
                    , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
-                dsFreeze.FREEZE(command[1], debug);
+                dsFreeze.FREEZE(command[1]);
             }
             else
             {
@@ -255,7 +254,7 @@ namespace PuppetMaster
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                cRead.READ(command[1], command[2], command[3], debug);
+                cRead.READ(command[1], command[2], command[3]);
             }
             else
             {
@@ -267,7 +266,7 @@ namespace PuppetMaster
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                cRead.READ(command[1], command[2], command[3], debug);
+                cRead.READ(command[1], command[2], command[3]);
             }
         }
 
@@ -280,7 +279,7 @@ namespace PuppetMaster
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text, debug);
+                cWrite.WRITE(command[1], command[2], text);
             }
             else
             {
@@ -293,7 +292,7 @@ namespace PuppetMaster
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text, debug);
+                cWrite.WRITE(command[1], command[2], text);
             }
         }
 
@@ -304,7 +303,7 @@ namespace PuppetMaster
                 // Unfreeze data server
                 IDServer dsUnfreeze = (IDServer)Activator.GetObject(typeof(IDServer)
                    , "tcp://localhost:" + dataserverList[command[1]] + "/Data_Server");
-                dsUnfreeze.UNFREEZE(command[1], debug);
+                dsUnfreeze.UNFREEZE(command[1]);
             }
             else
             {
@@ -323,7 +322,7 @@ namespace PuppetMaster
             {
                 IMDServer mdsrecover = (IMDServer)Activator.GetObject(typeof(IMDServer)
                     , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsrecover.RECOVER(" ", new DebugDelegate(debug));
+                mdsrecover.RECOVER(" ");
             }
             else
             {
@@ -344,7 +343,7 @@ namespace PuppetMaster
                 // Commands client to create a file
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
+                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]));
             }
             else
             {
@@ -356,7 +355,7 @@ namespace PuppetMaster
                 IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
                 Thread.Sleep(1000);
-                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), debug);
+                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]));
             }
         }
 
@@ -367,7 +366,7 @@ namespace PuppetMaster
                 // Commands client to create a file
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cOpen.OPEN(command[1], command[2], debug);
+                cOpen.OPEN(command[1], command[3]);
             }
             else
             {
@@ -378,7 +377,7 @@ namespace PuppetMaster
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cOpen.OPEN(command[1], command[2], debug);
+                cOpen.OPEN(command[1], command[3]);
             }
         }
     }
