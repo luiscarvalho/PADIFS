@@ -47,6 +47,9 @@ namespace DataServer
         private string filename;
         private byte[] filecontent;
         private int fileversion = 0;
+        private int numFile = 0;
+        private List<KeyValuePair<string,KeyValuePair<int,byte[]>>> fileList = new List<KeyValuePair<string,KeyValuePair<int,byte[]>>>();
+        private List<KeyValuePair<int, string>> localFileList = new List<KeyValuePair<int, string>>();
 
         public DServer(string dservername)
         {
@@ -62,6 +65,28 @@ namespace DataServer
             //debug("Data server" + dserver_name + "created.");
         }
 
+        public void CREATE(string filename)
+        {
+            fileList.Add(new KeyValuePair<string, KeyValuePair<int, byte[]>>(filename,
+                new KeyValuePair<int, byte[]>(0, System.Text.Encoding.ASCII.GetBytes(""))));
+            System.Console.WriteLine("File " + filename + " created." + "\r\n");
+            localFileList.Add(new KeyValuePair<int,string>(numFile,filename));
+            numFile++;
+        }
+
+        public List<KeyValuePair<string, string>> OPEN(string filename)
+        {
+            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string, string>>();
+            foreach (KeyValuePair<int,string> file in localFileList)
+            {
+                if (file.Value.Equals(filename))
+                {
+                    openResult.Add(new KeyValuePair<string, string>(dserver_name, file.Key.ToString()));
+                }
+            }
+            return openResult;
+        }
+
         public void Register(string port)
         {
             IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
@@ -73,20 +98,41 @@ namespace DataServer
             }
         }
 
-        public void READ(string filename, string semantics)
+        public string READ(string filename, string semantics)
         {
+            string fileName = null;
+            string result = null;
+
             if (failServer == 0)
             {
                 if (freezeServer == 0)
                 {
-                    foreach (string fname in Directory.GetFiles(serverpath))
+                    foreach (KeyValuePair<int, string> localfile in localFileList)
                     {
-                        if (fname.Equals(serverpath + "\\" + filename))
+                        if (filename.Equals(localfile.Key))
                         {
-                            System.Console.WriteLine("Encontrei ficheiro!");
-                            System.Diagnostics.Process.Start(serverpath + "\\" + filename);
-                            //File.ReadAllLines(serverpath + "\\" + filename);
+                            fileName = localfile.Value;
                         }
+                    }
+    
+                    int i = 0;
+                    foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                    {   
+                        if (file.Key.Equals(fileName))
+                        {
+                            // procurar ultima versao
+                            if (semantics.Equals("default") && i <= file.Value.Key)
+                            {
+                                i = file.Value.Key;
+                                System.Console.WriteLine("Versao do ficheiro n: " + i);
+                            }
+
+                            if (file.Value.Key.Equals(i))
+                            {
+                                result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                            }
+                        }
+                        i++;
                     }
                 }
                 else
@@ -99,22 +145,33 @@ namespace DataServer
             {
                 //debug("Server" + dserver_name + "has failed");
             }
+            return result;
         }
 
         public void WRITE(string filename, byte[] content)
         {
+            string fileName = null;
             if (failServer == 0)
             {
-                if (freezeServer == 1)
+                if (freezeServer == 0)
                 {
-                    foreach (string fname in Directory.GetFiles(serverpath))
+                    foreach (KeyValuePair<int, string> localfile in localFileList)
                     {
-                        if (fname.Equals(filename))
+                        if(int.Parse(filename).Equals(localfile.Key))
                         {
-                            File.AppendAllText(serverpath += filename, content.ToString());
+                            fileName = localfile.Value;
+                            break;
                         }
                     }
-                    File.WriteAllText(serverpath += filename, content.ToString());
+
+                    foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                    {
+                        if (file.Key.Equals(fileName))
+                        {
+                            fileList.Add(new KeyValuePair<string, KeyValuePair<int, byte[]>>(file.Key,
+                    new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content)));
+                        }
+                    }
                 }
                 else
                 {

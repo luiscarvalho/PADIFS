@@ -73,22 +73,34 @@ namespace MetaData_Server
         public void CREATE(string fname, int dservers, int rquorum, int wquorum)
         {
             System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
-            dataServers.Add(new KeyValuePair<string, string>("d-0", "0"));
-            mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
-
+            int nservers = dataServerList.Count();
+            int i = 0;
             foreach (KeyValuePair<string,string> dserver in dataServerList)
             {
+                if (i == nservers || i == dservers)
+                {
+                    break;
+                }
+
+                if(!dataServers.Contains(new KeyValuePair<string, string>(dserver.Key, dserver.Value))){
+                    dataServers.Add(new KeyValuePair<string, string>(dserver.Key, dserver.Value));
+                }
+                System.Console.WriteLine("File added in: " + dserver.Key);
                 string ds = dserver.Key;
                 string serverpath = Directory.GetCurrentDirectory();
                 serverpath += Path.Combine(ds);
-                if (Directory.Exists(serverpath))
-                {
-                    File.CreateText(serverpath + "\\" + fname + ".txt");
-                }
-            }
+                IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                  , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
 
+//                if (Directory.Exists(serverpath))
+//                {
+//                    File.CreateText(serverpath + "\\" + fname + ".txt");
+//                }
+//                i++;
+            }
+            mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
             System.Console.WriteLine("File " + fname + " created.");
-            System.Console.WriteLine(mdTable.ToString());
         }
 
         public void DELETE(string fname)
@@ -100,33 +112,33 @@ namespace MetaData_Server
             }
         }
 
-        public void OPEN(string fname)
+        public List<KeyValuePair<string, string>> OPEN(string fname)
         {
+            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string,string>>();
+            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string,string>>();
             foreach (DataRow dr in mdTable.Rows)
             {
                 if (dr["Filename"].ToString() == fname)
                 {
-                   // dr.BeginEdit();
-                   Console.WriteLine("Found file!" + "\r\n");
-                   // dr.AcceptChanges();
-                }
-            }
+                    List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string,string>>) dr["Data Servers"];
 
-            foreach (KeyValuePair<string,string> dserver in dataServerList)
-            {
-                string ds = dserver.Key;
-                char ndserver = ds.ElementAt(ds.Length - 1);
-                string serverpath = Directory.GetCurrentDirectory();
-                serverpath += Path.Combine(ds);
-                if (Directory.Exists(serverpath))
-                {
-                    if(File.Exists(serverpath + "\\" + fname + ".txt")){
-                        IDServer dsOpen = (IDServer)Activator.GetObject(typeof(IDServer)
-                   , "tcp://localhost:807" + ndserver + "/Data_Server");
-                        dsOpen.READ(fname + ".txt", "verbose");
+                    foreach (KeyValuePair<string, string> dserver in ldserver){
+                        openResult.Add(new KeyValuePair<string,string>(dr["Filename"].ToString() +".txt",dserver.Key));
+                        string ds = dserver.Key;
+                        string serverpath = Directory.GetCurrentDirectory();
+                        serverpath += Path.Combine(ds);
+                        
+                        IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                          , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                        openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
+                        foreach (KeyValuePair<string,string> value in openResultDS)
+                        {
+                            openResult.Add(new KeyValuePair<string,string>(value.Key, value.Value));
+                        }
                     }
                 }
             }
+            return openResult;
         }
 
         public void CLOSE(string fname)

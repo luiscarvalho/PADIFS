@@ -27,6 +27,7 @@ namespace PuppetMaster
         Hashtable metadataList = new Hashtable();
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
+        private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
 
         public PuppetMasterForm()
         {
@@ -248,13 +249,14 @@ namespace PuppetMaster
 
         private void Read(string[] command)
         {
+            string result = null;
             if (clientList.Contains(command[1]))
             {
                 // Commands client to read a file
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                cRead.READ(command[1], command[2], command[3]);
+                    result = cRead.READ(command[1], command[3], command[5]);
             }
             else
             {
@@ -266,8 +268,10 @@ namespace PuppetMaster
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                cRead.READ(command[1], command[2], command[3]);
+                    result = cRead.READ(command[1], command[3], command[5]);
             }
+            localStringRegister.Add(new KeyValuePair<int,string>(int.Parse(command[7]),result));
+            System.Console.WriteLine("Localfile: " + command[3] + " Result: " + result);
         }
 
         private void Write(string[] command)
@@ -279,7 +283,7 @@ namespace PuppetMaster
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text);
+                    cWrite.WRITE(command[1], command[3], text);
             }
             else
             {
@@ -292,7 +296,7 @@ namespace PuppetMaster
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 byte[] text = Encoding.ASCII.GetBytes(command[3]);
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                cWrite.WRITE(command[1], command[2], text);
+                    cWrite.WRITE(command[1], command[3], text);
             }
         }
 

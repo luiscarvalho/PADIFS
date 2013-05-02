@@ -14,7 +14,7 @@ namespace Client
     class Client
     {
         static string clientname;
-
+        
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
@@ -33,10 +33,10 @@ namespace Client
             Console.WriteLine(mensagem);
         }
     }
-
     public class Cliente : MarshalByRefObject, IClient
     {
         string cname;
+        List<KeyValuePair<string, string>> filesClient = new List<KeyValuePair<string,string>>();
 
         public Cliente(string clientname)
         {
@@ -49,7 +49,7 @@ namespace Client
             System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
             IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:8080/MetaData_Server");
-            mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum);
+           mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum);
         }
 
         public void OPEN(string clientname, string filename)
@@ -57,7 +57,14 @@ namespace Client
             System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:8080/MetaData_Server");
-            mdsopen.OPEN(filename);
+            List<KeyValuePair<string, string>> filesClientTemp = mdsopen.OPEN(filename);
+            foreach (KeyValuePair<string, string> value in filesClientTemp)
+            {
+                filesClient.Add(new KeyValuePair<string,string>(value.Key, value.Value));
+                System.Console.WriteLine(value.Key + " " + value.Value);
+            }
+            
+
         }
 
         public void CLOSE(string clientname, string filename)
@@ -67,18 +74,39 @@ namespace Client
             mdsclose.CLOSE(filename);
         }
 
-        public void READ(string clientname, string filename, string semantics)
+        public string READ(string clientname, string filename, string semantics)
         {
-            IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer)
-            , "tcp://localhost:8087/Data_Server");
-            dsread.READ(filename, semantics);
+            string result = null;
+            System.Console.WriteLine("Read it!"+"\r\n");
+            foreach (KeyValuePair<string, string> value in filesClient)
+            {
+                System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
+                if (value.Value.Equals(filename))
+                {
+                    string[] nserver = value.Key.Split('-');
+                    System.Console.WriteLine("nserver: " + nserver[1]);
+                    IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer), "tcp://localhost:807" + nserver[1] + "/Data_Server");
+                    result = dsread.READ(filename, semantics);
+                }
+            }
+            return result;
         }
 
         public void WRITE(string clientname, string filename, byte[] content)
         {
-            IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
-            , "tcp://localhost:8087/Data_Server");
-            dswrite.WRITE(filename, content);
+            System.Console.WriteLine("Write this!"+"\r\n");
+            foreach (KeyValuePair<string, string> value in filesClient)
+            {
+                System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
+                if (value.Value.Equals(filename))
+                {
+                    string[] nserver = value.Key.Split('-');
+                    System.Console.WriteLine("nserver: " + nserver[1]);
+                    IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
+                    , "tcp://localhost:807" + nserver[1] + "/Data_Server");
+                    dswrite.WRITE(filename, content);
+                }
+            }
         }
 
         public void DELETE(string clientname, string filename)
