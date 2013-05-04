@@ -89,6 +89,7 @@ namespace Client
                     result = dsread.READ(filename, semantics);
                 }
             }
+            System.Console.WriteLine("File: " + filename + " Content: " + result); 
             return result;
         }
 

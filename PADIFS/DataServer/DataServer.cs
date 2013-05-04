@@ -38,15 +38,11 @@ namespace DataServer
     public class DServer : MarshalByRefObject, IDServer
     {
         private string dserver_name;
-        private string port;
         private List<string> dsrequests = new List<string>();
         private int numServer = 0;
         private int freezeServer;
         private int failServer = 0;
         private string serverpath;
-        private string filename;
-        private byte[] filecontent;
-        private int fileversion = 0;
         private int numFile = 0;
         private List<KeyValuePair<string,KeyValuePair<int,byte[]>>> fileList = new List<KeyValuePair<string,KeyValuePair<int,byte[]>>>();
         private List<KeyValuePair<int, string>> localFileList = new List<KeyValuePair<int, string>>();
@@ -100,7 +96,7 @@ namespace DataServer
 
         public string READ(string filename, string semantics)
         {
-            string fileName = null;
+            char[] fileName = new char[1];
             string result = null;
 
             if (failServer == 0)
@@ -109,30 +105,33 @@ namespace DataServer
                 {
                     foreach (KeyValuePair<int, string> localfile in localFileList)
                     {
-                        if (filename.Equals(localfile.Key))
+                        if (int.Parse(filename).Equals(localfile.Key))
                         {
-                            fileName = localfile.Value;
+                            fileName = new char[localfile.Value.Length];
+                            localfile.Value.CopyTo(0,fileName,0,localfile.Value.Length);
                         }
                     }
     
-                    int i = 0;
                     foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
-                    {   
-                        if (file.Key.Equals(fileName))
+                    {
+                        if (file.Key.Equals(new string(fileName)))
                         {
-                            // procurar ultima versao
-                            if (semantics.Equals("default") && i <= file.Value.Key)
+                            for (int i = 0; i <= file.Value.Key; i++)
                             {
-                                i = file.Value.Key;
-                                System.Console.WriteLine("Versao do ficheiro n: " + i);
-                            }
+                                // procurar ultima versao
+                                if (semantics.Equals("default"))
+                                {
+                                    i = file.Value.Key;
+                                    System.Console.WriteLine("Versao do ficheiro n: " + i);
+                                }
 
-                            if (file.Value.Key.Equals(i))
-                            {
-                                result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                                if (file.Value.Key.Equals(i))
+                                {
+                                    System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Value));
+                                    result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                                }
                             }
                         }
-                        i++;
                     }
                 }
                 else
@@ -151,6 +150,8 @@ namespace DataServer
         public void WRITE(string filename, byte[] content)
         {
             string fileName = null;
+            KeyValuePair<string, KeyValuePair<int, byte[]>> result = new KeyValuePair<string, KeyValuePair<int, byte[]>>();
+
             if (failServer == 0)
             {
                 if (freezeServer == 0)
@@ -168,10 +169,11 @@ namespace DataServer
                     {
                         if (file.Key.Equals(fileName))
                         {
-                            fileList.Add(new KeyValuePair<string, KeyValuePair<int, byte[]>>(file.Key,
-                    new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content)));
+                            result = new KeyValuePair<string, KeyValuePair<int, byte[]>>(fileName,
+                    new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content));
                         }
                     }
+                    fileList.Add(result);
                 }
                 else
                 {
@@ -181,7 +183,7 @@ namespace DataServer
             }
             else
             {
-              //  debug("Server" + dserver_name + "has failed");
+              System.Console.WriteLine("Server" + dserver_name + "has failed");
             }
         }
 

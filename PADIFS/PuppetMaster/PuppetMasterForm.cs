@@ -29,6 +29,7 @@ namespace PuppetMaster
         Hashtable dataserverList = new Hashtable();
         private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
 
+
         public PuppetMasterForm()
         {
             InitializeComponent();
@@ -271,7 +272,7 @@ namespace PuppetMaster
                     result = cRead.READ(command[1], command[3], command[5]);
             }
             localStringRegister.Add(new KeyValuePair<int,string>(int.Parse(command[7]),result));
-            System.Console.WriteLine("Localfile: " + command[3] + " Result: " + result);
+            infoTX.Text = infoTX.Text + "Localfile: " + command[3] + " Result: " + result;
         }
 
         private void Write(string[] command)
@@ -281,9 +282,15 @@ namespace PuppetMaster
                 // Commands client to write a file
                 IClient cWrite = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                byte[] text = Encoding.ASCII.GetBytes(command[3]);
+                string textResult = "";
+                for (int i = 5; i < command.Length; i++)
+                {
+                    textResult += " " + command[i];        
+                }
+                infoTX.Text = infoTX.Text + "Text to Write" + textResult + "\r\n";
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                    cWrite.WRITE(command[1], command[3], text);
+                    cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
+  
             }
             else
             {
@@ -294,9 +301,14 @@ namespace PuppetMaster
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cWrite = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                byte[] text = Encoding.ASCII.GetBytes(command[3]);
+                string textResult = "";
+                for (int i = 5; i < command.Length; i++)
+                {
+                    textResult += " " + command[i];
+                }
+                infoTX.Text = infoTX.Text + "Text to Write" + textResult + "\r\n";
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                    cWrite.WRITE(command[1], command[3], text);
+                    cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
             }
         }
 
