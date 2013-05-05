@@ -239,7 +239,23 @@ namespace DataServer
 
         public void DUMP()
         {
-            // print values
+            System.Console.WriteLine("DataServer: " + this.dserver_name + "\r\n");
+            System.Console.WriteLine("Path: " + this.serverpath + "\r\n");
+
+            System.Console.WriteLine("File List: \r\n");
+
+            foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in this.fileList)
+            {
+                System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Key + " Content: " 
+                    + System.Text.Encoding.UTF8.GetString(file.Value.Value) + "\r\n");
+            }
+
+            System.Console.WriteLine("Local File List: \r\n");
+
+            foreach (KeyValuePair<int, string> localfile in this.localFileList) 
+            {
+                System.Console.WriteLine("File Register: " + localfile.Key + " Corresponding file: " + localfile.Value);
+            }
         }
     }
 }

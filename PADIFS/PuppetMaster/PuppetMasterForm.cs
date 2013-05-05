@@ -225,7 +225,7 @@ namespace PuppetMaster
             {
                 IClient cCopy = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCopy.COPY(command[1], command[2], command[3], command[4], command[5]);
+                cCopy.COPY(command[1], command[3], command[5], command[7], command[8]);
             }
             else
             {

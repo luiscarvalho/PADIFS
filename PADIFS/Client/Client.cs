@@ -119,16 +119,63 @@ namespace Client
 
         public void COPY(string clientname, string fileregister1, string semantics, string fileregister2, string salt)
         {
-            // Ainda não percebi bem o que são os file-register
+            string readResult = READ(clientname, fileregister1, semantics);
+            WRITE(clientname, fileregister2, Encoding.ASCII.GetBytes(readResult + salt));
         }
 
         public void DUMP()
         {
-            // print values
+            System.Console.WriteLine("Client name: " + this.cname + "\r\n");
+
+            System.Console.WriteLine("File List opened by this client: \r\n");
+
+            foreach (KeyValuePair<string, string> file in this.filesClient)
+            {
+                System.Console.WriteLine("File: " + file.Key + " Content: " + file.Value + "\r\n");
+            }
         }
 
         public void EXESCRIPT(string clientname, string script)
         {
+           string[] scriptFile = System.IO.File.ReadAllLines(@script);
+
+           foreach (string command in scriptFile)
+           {
+               executeCommand(command);
+           }
+        }
+
+        private void executeCommand(string commandline)
+        {
+            string[] command = commandline.Split(' ', ',');
+
+            switch (command[0])
+            {
+
+                case "OPEN":
+                    OPEN(command[1],command[3]);
+                    break;
+                case "CLOSE":
+                    CLOSE(command[1],command[3]);
+                    break;
+                case "READ":
+                    READ(command[1],command[3],command[5]);
+                    break;
+                case "WRITE":
+                    WRITE(command[1],command[3],Encoding.ASCII.GetBytes(command[5]));
+                    break;
+                case "DUMP":
+                    DUMP();
+                    break;
+                case "DELETE":
+                    DELETE(command[1],command[3]);
+                    break;
+                case "EXESCRIPT":
+                    EXESCRIPT(command[1],command[3]);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

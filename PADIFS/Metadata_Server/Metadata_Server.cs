@@ -176,7 +176,25 @@ namespace MetaData_Server
 
         public void DUMP()
         {
-            // print values
+            System.Console.WriteLine("MetaDataServer: " + this.mdserver_name + "\r\n");
+
+            System.Console.WriteLine("DataServer List: \r\n");
+
+            foreach (KeyValuePair<string, string> file in this.dataServerList)
+            {
+                System.Console.WriteLine("DataServer: " + file.Key + " Port: " + file.Value + "\r\n");
+            }
+
+            System.Console.WriteLine("Local File List: \r\n");
+
+            foreach (DataRow mdRow in this.mdTable.Rows)
+            {
+                System.Console.WriteLine("---Row" + "\r\n");
+                foreach (var item in mdRow.ItemArray)
+                {
+                    System.Console.WriteLine(item);
+                }
+            }
         }
     }
 }
