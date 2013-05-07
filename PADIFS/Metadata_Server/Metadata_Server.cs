@@ -64,6 +64,21 @@ namespace MetaData_Server
             //debug("Metadata server " + mdserver_name + " created.");
         }
 
+        public DataTable copyMDServer(){
+
+            DataTable copyMD = new DataTable();
+            copyMD = this.mdTable;
+
+            return copyMD;
+        
+        }
+
+        public void loadMDServer(DataTable MDtable) {
+
+            this.mdTable = MDtable;
+        
+        }
+
         public bool RegisteDServer(string dservername, string port)
         {
             System.Console.WriteLine("Metadata server " + mdserver_name + ": "+ dservername +" registered.");
@@ -154,11 +169,13 @@ namespace MetaData_Server
 
         }
 
-        public void FAIL(string mdserver)
+        public DataTable FAIL(string mdserver)
         {
             mdTable.EndInit();
             mdTable.EndLoadData();
             failServer = 1;
+
+            return copyMDServer();
         }
 
         public void RECOVER(string mdserver)

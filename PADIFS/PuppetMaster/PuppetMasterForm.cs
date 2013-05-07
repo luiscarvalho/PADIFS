@@ -132,12 +132,31 @@ namespace PuppetMaster
 
         private void Fail(string[] command)
         {
+            DataTable newMD = new DataTable();
+            String newMDServer = null;
 
             if (metadataList.Contains(command[1]))
             {
                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsFail.FAIL(command[1]);
+                newMD = mdsFail.FAIL(command[1]);
+                metadataList.Remove(command[1]);
+                if (metadataList.Count > 1)
+                {
+                    foreach (String MDServer in metadataList.Keys)
+                    {
+                        newMDServer = MDServer;
+                        break;
+                    }
+                    IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                       , "tcp://localhost:" + metadataList[newMDServer] + "/MetaData_Server");
+                    mdsLoad.loadMDServer(newMD);
+
+                }
+                else {
+                    Recover(command);
+                }
+
             }
             else if (dataserverList.Contains(command[1]))
             {
@@ -257,7 +276,7 @@ namespace PuppetMaster
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                    result = cRead.READ(command[1], command[3], command[5]);
+                result = cRead.READ(command[1], command[3], command[5]);
             }
             else
             {
@@ -269,9 +288,9 @@ namespace PuppetMaster
                 IClient cRead = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                 // O metodo READ tem de devolver o conteudo do ficheiro e guarda-lo numa string[] com o nome commmand[4]
-                    result = cRead.READ(command[1], command[3], command[5]);
+                result = cRead.READ(command[1], command[3], command[5]);
             }
-            localStringRegister.Add(new KeyValuePair<int,string>(int.Parse(command[7]),result));
+            localStringRegister.Add(new KeyValuePair<int, string>(int.Parse(command[7]), result));
             infoTX.Text = infoTX.Text + "Localfile: " + command[3] + " Result: " + result;
         }
 
@@ -285,12 +304,12 @@ namespace PuppetMaster
                 string textResult = "";
                 for (int i = 5; i < command.Length; i++)
                 {
-                    textResult += " " + command[i];        
+                    textResult += " " + command[i];
                 }
                 infoTX.Text = infoTX.Text + "Text to Write" + textResult + "\r\n";
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                    cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
-  
+                cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
+
             }
             else
             {
@@ -308,7 +327,7 @@ namespace PuppetMaster
                 }
                 infoTX.Text = infoTX.Text + "Text to Write" + textResult + "\r\n";
                 //byte[] text = command[3].Split(' ' ).Select(s => Convert.ToByte(s, 16)).ToArray();
-                    cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
+                cWrite.WRITE(command[1], command[3], Encoding.ASCII.GetBytes(textResult));
             }
         }
 

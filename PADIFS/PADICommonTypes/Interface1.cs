@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +15,8 @@ namespace PADICommonTypes
         void CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum);
         void DELETE(string filename);
         void RECOVER(string mdserver);
-        void FAIL(string mdserver);
+        DataTable FAIL(string mdserver);
+        void loadMDServer(DataTable MDtable);
         void DUMP();
         bool RegisteDServer(string dservername, string port);
     }
