@@ -17,6 +17,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Threading;
 using System.Runtime.Remoting.Proxies;
+using System.Diagnostics;
 
 namespace PuppetMaster
 {
@@ -27,6 +28,7 @@ namespace PuppetMaster
         Hashtable metadataList = new Hashtable();
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
+        Hashtable processList = new Hashtable();
         private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
 
 
@@ -140,17 +142,24 @@ namespace PuppetMaster
                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
                 newMD = mdsFail.FAIL(command[1]);
+                string[] nserver = command[1].Split('-');
+                foreach (DictionaryEntry mdProc in processList)
+                {
+                    if (mdProc.Key.ToString().Equals(metadataList[command[1]]))
+                    {
+                        Process[] mdKill = Process.GetProcessesByName(mdProc.Value.ToString());
+                        mdKill[Int32.Parse(nserver[1])].Kill();
+                    }
+                }
                 metadataList.Remove(command[1]);
                 if (metadataList.Count > 1)
                 {
                     foreach (String MDServer in metadataList.Keys)
                     {
-                        newMDServer = MDServer;
-                        break;
+                       IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                       , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
+                       mdsLoad.loadMDServer(newMD);
                     }
-                    IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                       , "tcp://localhost:" + metadataList[newMDServer] + "/MetaData_Server");
-                    mdsLoad.loadMDServer(newMD);
 
                 }
                 else {
@@ -352,23 +361,34 @@ namespace PuppetMaster
 
         private void Recover(string[] command)
         {
+            DataTable newMD = new DataTable();
 
-            if (metadataList.Contains(command[1]))
+            if (metadataList.Count > 1)
             {
-                IMDServer mdsrecover = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsrecover.RECOVER(" ");
-            }
-            else
-            {
-                // comando que lança um processo metadata server
+                foreach (String MDServer in metadataList.Keys)
+                {
+                    IMDServer mdsCopy = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                    , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
+                   newMD =  mdsCopy.copyMDServer();
+                   break;
+                }
+
+            }    
+            
+            // comando que lança um processo metadata server
                 string[] nserver = command[1].Split('-');
                 infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
-                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
+                Process mdRecover = System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
                 infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + " with port: " + "808" + nserver[1] + "\r\n";
                 metadataList.Add(command[1], "808" + nserver[1]);
-            }
+                processList.Add( "808" + nserver[1], mdRecover.ProcessName);
+              
+                //mdRecover.Kill();
+                IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                           , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsLoad.loadMDServer(newMD);
 
+                
         }
 
         private void Create(string[] command)

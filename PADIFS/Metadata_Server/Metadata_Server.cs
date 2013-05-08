@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using PADICommonTypes;
 using System.IO;
+using System.Threading;
+using System.ComponentModel;
 
 namespace MetaData_Server
 {
@@ -64,131 +66,205 @@ namespace MetaData_Server
             //debug("Metadata server " + mdserver_name + " created.");
         }
 
-        public DataTable copyMDServer(){
-
+        public DataTable copyMDServer()
+        {
             DataTable copyMD = new DataTable();
-            copyMD = this.mdTable;
+            BackgroundWorker bwCopy = new BackgroundWorker();
 
+            bwCopy.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                
+                copyMD = this.mdTable;
+                
+            });
+            bwCopy.RunWorkerAsync();
             return copyMD;
-        
         }
 
-        public void loadMDServer(DataTable MDtable) {
+        public void loadMDServer(DataTable MDtable)
+        {
+            BackgroundWorker bwLoad = new BackgroundWorker();
 
-            this.mdTable = MDtable;
-        
+            bwLoad.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                if (!MDtable.Equals(null))
+                {
+                    this.mdTable = MDtable;
+                }
+            });
+            bwLoad.RunWorkerAsync();
         }
 
         public bool RegisteDServer(string dservername, string port)
         {
-            System.Console.WriteLine("Metadata server " + mdserver_name + ": "+ dservername +" registered.");
-            dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+             BackgroundWorker bwRegister = new BackgroundWorker();
+
+             bwRegister.DoWork += new DoWorkEventHandler(
+             delegate(object o, DoWorkEventArgs args)
+             {
+                 System.Console.WriteLine("Metadata server " + mdserver_name + ": " + dservername + " registered.");
+                 dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+             });
+             bwRegister.RunWorkerAsync();
             return true;
         }
         public void CREATE(string fname, int dservers, int rquorum, int wquorum)
         {
-            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
-            int nservers = dataServerList.Count();
-            int i = 0;
-            foreach (KeyValuePair<string,string> dserver in dataServerList)
+            BackgroundWorker bwCreate = new BackgroundWorker();
+
+            bwCreate.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
             {
-                if (i == nservers || i == dservers)
+                System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
+                int nservers = dataServerList.Count();
+                int i = 0;
+                foreach (KeyValuePair<string, string> dserver in dataServerList)
                 {
-                    break;
-                }
+                    if (i == nservers || i == dservers)
+                    {
+                        break;
+                    }
 
-                if(!dataServers.Contains(new KeyValuePair<string, string>(dserver.Key, dserver.Value))){
-                    dataServers.Add(new KeyValuePair<string, string>(dserver.Key, dserver.Value));
-                }
-                System.Console.WriteLine("File added in: " + dserver.Key);
-                string ds = dserver.Key;
-                string serverpath = Directory.GetCurrentDirectory();
-                serverpath += Path.Combine(ds);
-                IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                  , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
+                    if (!dataServers.Contains(new KeyValuePair<string, string>(dserver.Key, dserver.Value)))
+                    {
+                        dataServers.Add(new KeyValuePair<string, string>(dserver.Key, dserver.Value));
+                    }
+                    System.Console.WriteLine("File added in: " + dserver.Key);
+                    string ds = dserver.Key;
+                    string serverpath = Directory.GetCurrentDirectory();
+                    serverpath += Path.Combine(ds);
+                    IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                      , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                    dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
 
-//                if (Directory.Exists(serverpath))
-//                {
-//                    File.CreateText(serverpath + "\\" + fname + ".txt");
-//                }
-//                i++;
-            }
-            mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
-            System.Console.WriteLine("File " + fname + " created.");
+                    //                if (Directory.Exists(serverpath))
+                    //                {
+                    //                    File.CreateText(serverpath + "\\" + fname + ".txt");
+                    //                }
+                    //                i++;
+                }
+                mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
+                System.Console.WriteLine("File " + fname + " created.");
+            });
+            bwCreate.RunWorkerAsync();
         }
 
         public void DELETE(string fname)
         {
-            foreach (DataRow dr in mdTable.Rows)
+            BackgroundWorker bwDelete = new BackgroundWorker();
+
+            bwDelete.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
             {
-                if (dr["Filename"].ToString() == fname)
-                    dr.Delete();
-            }
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                        dr.Delete();
+                }
+            });
+            bwDelete.RunWorkerAsync();
         }
 
         public List<KeyValuePair<string, string>> OPEN(string fname)
         {
-            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string,string>>();
-            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string,string>>();
-            foreach (DataRow dr in mdTable.Rows)
-            {
-                if (dr["Filename"].ToString() == fname)
-                {
-                    List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string,string>>) dr["Data Servers"];
+            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string, string>>();
+            
+            BackgroundWorker bwOpen = new BackgroundWorker();
 
-                    foreach (KeyValuePair<string, string> dserver in ldserver){
-                        openResult.Add(new KeyValuePair<string,string>(dr["Filename"].ToString() +".txt",dserver.Key));
-                        string ds = dserver.Key;
-                        string serverpath = Directory.GetCurrentDirectory();
-                        serverpath += Path.Combine(ds);
-                        
-                        IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                          , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                        openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
-                        foreach (KeyValuePair<string,string> value in openResultDS)
+            bwOpen.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                    {
+                        List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string, string>>)dr["Data Servers"];
+
+                        foreach (KeyValuePair<string, string> dserver in ldserver)
                         {
-                            openResult.Add(new KeyValuePair<string,string>(value.Key, value.Value));
+                            openResult.Add(new KeyValuePair<string, string>(dr["Filename"].ToString() + ".txt", dserver.Key));
+                            string ds = dserver.Key;
+                            string serverpath = Directory.GetCurrentDirectory();
+                            serverpath += Path.Combine(ds);
+
+                            IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                              , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                            openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
+                            foreach (KeyValuePair<string, string> value in openResultDS)
+                            {
+                                openResult.Add(new KeyValuePair<string, string>(value.Key, value.Value));
+                            }
                         }
                     }
                 }
-            }
+            });
+            bwOpen.RunWorkerAsync();
             return openResult;
         }
 
         public void CLOSE(string fname)
         {
-            foreach (DataRow dr in mdTable.Rows)
-            {
-                if (dr["Filename"].ToString() == fname)
-                {
-                    dr.CancelEdit();
-                    dr.EndEdit();
-                }
-            }
+            BackgroundWorker bwClose = new BackgroundWorker();
 
+            bwClose.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                    {
+                        dr.CancelEdit();
+                        dr.EndEdit();
+                    }
+                }
+            });
+            bwClose.RunWorkerAsync();
         }
 
         public DataTable FAIL(string mdserver)
         {
+            BackgroundWorker bwFail = new BackgroundWorker();
+
+            bwFail.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+
             mdTable.EndInit();
             mdTable.EndLoadData();
             failServer = 1;
-
+            });
+            bwFail.RunWorkerAsync();
             return copyMDServer();
+
         }
 
         public void RECOVER(string mdserver)
         {
-            if (failServer == 0)
+            BackgroundWorker bwRecover = new BackgroundWorker();
+
+            bwRecover.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
             {
-               //new MDServer(new DebugDelegate(debug));
-            }
-            else
-            {
-                this.mdTable = mdTable.Clone();
-                failServer = 0;
-            }
+                BackgroundWorker b = o as BackgroundWorker;
+
+                if (failServer == 0)
+                {
+                    //new MDServer(new DebugDelegate(debug));
+                }
+                else
+                {
+                    this.mdTable = mdTable.Clone();
+                    failServer = 0;
+                }
+            });
+            bwRecover.RunWorkerAsync();
         }
 
         public void DUMP()

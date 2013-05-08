@@ -17,6 +17,7 @@ namespace PADICommonTypes
         void RECOVER(string mdserver);
         DataTable FAIL(string mdserver);
         void loadMDServer(DataTable MDtable);
+        DataTable copyMDServer();
         void DUMP();
         bool RegisteDServer(string dservername, string port);
     }
