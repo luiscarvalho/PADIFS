@@ -29,6 +29,7 @@ namespace PuppetMaster
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
         Hashtable processList = new Hashtable();
+        string primaryMDserver;
         private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
 
 
@@ -156,13 +157,14 @@ namespace PuppetMaster
                 {
                     foreach (String MDServer in metadataList.Keys)
                     {
-                       IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                       , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
-                       mdsLoad.loadMDServer(newMD);
+                        IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                        , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
+                        mdsLoad.loadMDServer(newMD);
                     }
 
                 }
-                else {
+                else
+                {
                     Recover(command);
                 }
 
@@ -361,34 +363,30 @@ namespace PuppetMaster
 
         private void Recover(string[] command)
         {
-            DataTable newMD = new DataTable();
+            // comando que lança um processo metadata server
+            string[] nserver = command[1].Split('-');
+
+            if (metadataList.Contains(command[1]))
+            {
+                infoTX.Text += "O metadata server: " + command[1] + "já se encontra online" + "\r\n";
+            }
+
+            infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
+            Process mdRecover = System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
+            infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + " with port: " + "808" + nserver[1] + "\r\n";
+            metadataList.Add(command[1], "808" + nserver[1]);
+            processList.Add("808" + nserver[1], mdRecover.ProcessName);
 
             if (metadataList.Count > 1)
             {
-                foreach (String MDServer in metadataList.Keys)
-                {
-                    IMDServer mdsCopy = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                    , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
-                   newMD =  mdsCopy.copyMDServer();
-                   break;
-                }
-
-            }    
-            
-            // comando que lança um processo metadata server
-                string[] nserver = command[1].Split('-');
-                infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
-                Process mdRecover = System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\Metadata_Server\\bin\\Debug\\Metadata_Server.exe", command[1] + " " + " 808" + nserver[1]);
-                infoTX.Text = infoTX.Text + "Start metadata server: " + command[1] + " with port: " + "808" + nserver[1] + "\r\n";
-                metadataList.Add(command[1], "808" + nserver[1]);
-                processList.Add( "808" + nserver[1], mdRecover.ProcessName);
-              
-                //mdRecover.Kill();
-                IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                           , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsLoad.loadMDServer(newMD);
-
-                
+                IMDServer mdsPrimaryMDServer = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                       , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
+                mdsPrimaryMDServer.primaryMDServer(primaryMDserver, metadataList[primaryMDserver].ToString());
+            }
+            else
+            {
+                primaryMDserver = command[1];
+            }
         }
 
         private void Create(string[] command)
