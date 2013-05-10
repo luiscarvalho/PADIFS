@@ -5,9 +5,11 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
+using System.Transactions;
 using System.Threading.Tasks;
 using PADICommonTypes;
 using System.IO;
+using System.Threading;
 
 namespace DataServer
 {
@@ -30,7 +32,7 @@ namespace DataServer
             //servername = dserver.ToString();
             //dserver++;
             System.Console.WriteLine("Data Server " + args[0] + " start with port " + args[1]);
-            ds.Register(args[1], args[2]);
+            ds.Register(args[1],args[2]);
             System.Console.ReadLine();
         }
     }
@@ -44,8 +46,11 @@ namespace DataServer
         private int failServer = 0;
         private string serverpath;
         private int numFile = 0;
-        private List<KeyValuePair<string,KeyValuePair<int,byte[]>>> fileList = new List<KeyValuePair<string,KeyValuePair<int,byte[]>>>();
+        private List<KeyValuePair<string, KeyValuePair<int, byte[]>>> fileList = new List<KeyValuePair<string, KeyValuePair<int, byte[]>>>();
         private List<KeyValuePair<int, string>> localFileList = new List<KeyValuePair<int, string>>();
+        static ReaderWriterLock rwl = new ReaderWriterLock();
+        static int readerTimeouts = 0;
+        static int writerTimeouts = 0;
 
         public DServer(string dservername)
         {
@@ -59,7 +64,6 @@ namespace DataServer
             }
             numServer++;
             //debug("Data server" + dserver_name + "created.");
-
         }
 
         public void CREATE(string filename)
@@ -67,14 +71,14 @@ namespace DataServer
             fileList.Add(new KeyValuePair<string, KeyValuePair<int, byte[]>>(filename,
                 new KeyValuePair<int, byte[]>(0, System.Text.Encoding.ASCII.GetBytes(""))));
             System.Console.WriteLine("File " + filename + " created." + "\r\n");
-            localFileList.Add(new KeyValuePair<int,string>(numFile,filename));
+            localFileList.Add(new KeyValuePair<int, string>(numFile, filename));
             numFile++;
         }
 
         public List<KeyValuePair<string, string>> OPEN(string filename)
         {
             List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string, string>>();
-            foreach (KeyValuePair<int,string> file in localFileList)
+            foreach (KeyValuePair<int, string> file in localFileList)
             {
                 if (file.Value.Equals(filename))
                 {
@@ -84,10 +88,10 @@ namespace DataServer
             return openResult;
         }
 
-        public void Register(string DserverPort, string MDserverport)
+        public void Register(string DserverPort, string MDServerPort)
         {
             IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                , "tcp://localhost:"+MDserverport+"/MetaData_Server");
+                , "tcp://localhost:"+MDServerPort+"/MetaData_Server");
             if (mdserverRegister.RegisteDServer(this.dserver_name, DserverPort))
             {
                 this.freezeServer = 0;
@@ -99,92 +103,121 @@ namespace DataServer
         {
             char[] fileName = new char[1];
             string result = null;
-
-            if (failServer == 0)
+            try
             {
-                if (freezeServer == 0)
+                rwl.AcquireReaderLock(10);
+                try
                 {
-                    foreach (KeyValuePair<int, string> localfile in localFileList)
+                    if (failServer == 0)
                     {
-                        if (int.Parse(filename).Equals(localfile.Key))
+                        if (freezeServer == 0)
                         {
-                            fileName = new char[localfile.Value.Length];
-                            localfile.Value.CopyTo(0,fileName,0,localfile.Value.Length);
-                        }
-                    }
-    
-                    foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
-                    {
-                        if (file.Key.Equals(new string(fileName)))
-                        {
-                            for (int i = 0; i <= file.Value.Key; i++)
+                            foreach (KeyValuePair<int, string> localfile in localFileList)
                             {
-                                // procurar ultima versao
-                                if (semantics.Equals("default"))
+                                if (int.Parse(filename).Equals(localfile.Key))
                                 {
-                                    i = file.Value.Key;
-                                    System.Console.WriteLine("Versao do ficheiro n: " + i);
+                                    fileName = new char[localfile.Value.Length];
+                                    localfile.Value.CopyTo(0, fileName, 0, localfile.Value.Length);
                                 }
+                            }
 
-                                if (file.Value.Key.Equals(i))
+                            foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                            {
+                                if (file.Key.Equals(new string(fileName)))
                                 {
-                                    System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Value));
-                                    result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                                    for (int i = 0; i <= file.Value.Key; i++)
+                                    {
+                                        // procurar ultima versao
+                                        if (semantics.Equals("default"))
+                                        {
+                                            i = file.Value.Key;
+                                            System.Console.WriteLine("Versao do ficheiro n: " + i);
+                                        }
+
+                                        if (file.Value.Key.Equals(i))
+                                        {
+                                            System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Value));
+                                            result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                                        }
+                                    }
                                 }
                             }
                         }
+                        else
+                        {
+                            dsrequests.Add("READ/" + filename + "/" + semantics);
+                        }
                     }
+                    //debug("File" + filename + "opened for read purposes");
+                    return result;
                 }
-                else
+                finally
                 {
-                    dsrequests.Add("READ/" + filename + "/" + semantics);
+                    // Ensure that the lock is released.
+                    rwl.ReleaseReaderLock();
                 }
-                //debug("File" + filename + "opened for read purposes");
             }
-            else
+            catch (ApplicationException)
             {
-                //debug("Server" + dserver_name + "has failed");
+                // The reader lock request timed out.
+                Interlocked.Increment(ref readerTimeouts);
             }
             return result;
         }
 
         public void WRITE(string filename, byte[] content)
         {
-            string fileName = null;
-            KeyValuePair<string, KeyValuePair<int, byte[]>> result = new KeyValuePair<string, KeyValuePair<int, byte[]>>();
-
-            if (failServer == 0)
+            try
             {
-                if (freezeServer == 0)
+                rwl.AcquireWriterLock(100);
+                try
                 {
-                    foreach (KeyValuePair<int, string> localfile in localFileList)
-                    {
-                        if(int.Parse(filename).Equals(localfile.Key))
-                        {
-                            fileName = localfile.Value;
-                            break;
-                        }
-                    }
+                    string fileName = null;
+                    KeyValuePair<string, KeyValuePair<int, byte[]>> result = new KeyValuePair<string, KeyValuePair<int, byte[]>>();
 
-                    foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                    if (failServer == 0)
                     {
-                        if (file.Key.Equals(fileName))
+                        if (freezeServer == 0)
                         {
-                            result = new KeyValuePair<string, KeyValuePair<int, byte[]>>(fileName,
-                    new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content));
+                            foreach (KeyValuePair<int, string> localfile in localFileList)
+                            {
+                                if (int.Parse(filename).Equals(localfile.Key))
+                                {
+                                    fileName = localfile.Value;
+                                    break;
+                                }
+                            }
+
+                            foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                            {
+                                if (file.Key.Equals(fileName))
+                                {
+                                    result = new KeyValuePair<string, KeyValuePair<int, byte[]>>(fileName,
+                            new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content));
+                                }
+                            }
+                            fileList.Add(result);
+                        }
+                        else
+                        {
+                            dsrequests.Add("WRITE/" + filename + "/" + content.ToString());
                         }
                     }
-                    fileList.Add(result);
+                    else
+                    {
+                        System.Console.WriteLine("Server" + dserver_name + "has failed");
+                    }
                 }
-                else
+                finally
                 {
-                    dsrequests.Add("WRITE/" + filename + "/" + content.ToString());
+                    // Ensure that the lock is released.
+                    rwl.ReleaseWriterLock();
                 }
-               // debug("File" + filename + "opened for write purposes");
             }
-            else
+            catch (ApplicationException)
             {
-              System.Console.WriteLine("Server" + dserver_name + "has failed");
+                // The writer lock request timed out.
+                Interlocked.Increment(ref writerTimeouts);
             }
         }
 
@@ -193,11 +226,11 @@ namespace DataServer
             if (failServer == 0)
             {
                 freezeServer = 1;
-               // debug("Requests holded.");
+                // debug("Requests holded.");
             }
             else
             {
-              //  debug("Server" + dserver_name + "has failed");
+                //  debug("Server" + dserver_name + "has failed");
             }
         }
 
@@ -218,18 +251,18 @@ namespace DataServer
                         WRITE(req[1], System.Text.Encoding.UTF8.GetBytes(req[2]));
                     }
                 }
-               // debug("Dealt with Requests.");
+                // debug("Dealt with Requests.");
             }
             else
             {
-              //  debug("Server" + dserver_name + "has failed");
+                //  debug("Server" + dserver_name + "has failed");
             }
         }
 
         public void FAIL(string dserver)
         {
             failServer = 1;
-          //  debug("Server " + dserver_name + "has failed.");
+            //  debug("Server " + dserver_name + "has failed.");
         }
 
         public void RECOVER(string dserver)
@@ -247,13 +280,13 @@ namespace DataServer
 
             foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in this.fileList)
             {
-                System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Key + " Content: " 
+                System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Key + " Content: "
                     + System.Text.Encoding.UTF8.GetString(file.Value.Value) + "\r\n");
             }
 
             System.Console.WriteLine("Local File List: \r\n");
 
-            foreach (KeyValuePair<int, string> localfile in this.localFileList) 
+            foreach (KeyValuePair<int, string> localfile in this.localFileList)
             {
                 System.Console.WriteLine("File Register: " + localfile.Key + " Corresponding file: " + localfile.Value);
             }
