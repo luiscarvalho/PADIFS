@@ -13,7 +13,7 @@ namespace PADICommonTypes
     {
         DataRow OPEN(string filename);
         void CLOSE(string filename);
-        void CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
+        DataRow CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
         void DELETE(string filename);
         void RECOVER(string mdserver);
         void FAIL(string mdserver);
@@ -21,7 +21,7 @@ namespace PADICommonTypes
         void primaryMDServer(string mdserver_name, string mdserverport);
         void aliveMDServer(string mdserver_name, string mdserverport);
         void sendMDServer(DataTable MDtable, List<KeyValuePair<string, string>> DServerList);
-        void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers, Hashtable dataServerLoad);
+        void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers, Hashtable dataServerLoad, List<KeyValuePair<string,byte[]>> localFList);
         //void registeDS(string dservername, string port);
         //DataTable copyMDServer();
         void DUMP();
@@ -30,8 +30,8 @@ namespace PADICommonTypes
 
    public interface IDServer
     {
-        void CREATE(string filename);
-        List<KeyValuePair<string, string>> OPEN(string filename);
+        byte[] CREATE(string filename);
+        List<KeyValuePair<string, byte[]>> OPEN(string filename);
         string READ(string filename, string semantics);
         void WRITE(string filename, byte[] content);
         void FREEZE(string dserver);

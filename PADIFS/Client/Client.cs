@@ -38,7 +38,10 @@ namespace Client
     {
         string clientname;
         string clientport;
-        List<KeyValuePair<string, string>> filesClient = new List<KeyValuePair<string, string>>();
+        int fileRegister = 0;
+        List<KeyValuePair<KeyValuePair<int, string>, DataRow>> filesClient = new List<KeyValuePair<KeyValuePair<int, string>, DataRow>>();
+        List<KeyValuePair<KeyValuePair<int, string>, DataRow>> localFilesClient = new List<KeyValuePair<KeyValuePair<int, string>, DataRow>>();
+
 
         public Cliente(string clientname, string clientport)
         {
@@ -49,13 +52,23 @@ namespace Client
         public void CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, string primaryPort)
         {
-            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
+            DataRow createResult = null;
             try
             {
                 IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
                 , "tcp://localhost:" + primaryPort + "/MetaData_Server");
 
-                mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, clientport);
+                createResult = mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, clientport);
+                KeyValuePair<int, string> fileR = new KeyValuePair<int, string>(fileRegister, filename);
+                filesClient.Add(new KeyValuePair<KeyValuePair<int, string>, DataRow>(new KeyValuePair<int, string>(fileRegister, filename), createResult));
+                fileRegister++;
+
+                System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
+                System.Console.WriteLine(createResult["Filename"].ToString() + "\r\n");
+                System.Console.WriteLine(createResult["NB_DataServers"].ToString() + "\r\n");
+                System.Console.WriteLine(createResult["Read_Quorum"].ToString() + "\r\n");
+                System.Console.WriteLine(createResult["Write_Quorum"].ToString() + "\r\n");
+                System.Console.WriteLine(createResult["Local Files"].ToString() + "\r\n");
             }
             catch (System.Net.Sockets.SocketException ex)
             {
@@ -64,47 +77,57 @@ namespace Client
             }
             catch (RemotingException ey)
             {
-                System.Console.WriteLine(ey.Message+"\r\n");
+                System.Console.WriteLine(ey.Message + "\r\n");
             }
         }
 
-        public void OPEN(string clientname, string filename)
+        public void OPEN(string clientname, string filename, string primaryPort)
         {
             System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8080/MetaData_Server");
+            , "tcp://localhost:" + primaryPort + "/MetaData_Server");
             DataRow rowResult = mdsopen.OPEN(filename);
-            List<KeyValuePair<string, string>> filesClientTemp = (List<KeyValuePair<string, string>> ) rowResult["Data Servers"];
 
-            foreach (KeyValuePair<string, string> value in filesClientTemp)
+            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
             {
-                filesClient.Add(new KeyValuePair<string, string>(value.Key, value.Value));
-                System.Console.WriteLine(value.Key + " " + value.Value);
+                if (value.Key.Key.Equals(filename))
+                {
+                    localFilesClient.Add(new KeyValuePair<KeyValuePair<int, string>, DataRow>(new KeyValuePair<int, string>(value.Key.Key, value.Key.Value), rowResult));
+                    System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
+                    System.Console.WriteLine(rowResult["Filename"].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult["NB_DataServers"].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult["Read_Quorum"].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult["Write_Quorum"].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult["Local Files"].ToString() + "\r\n");
+                    break;
+                }
+
             }
 
 
         }
 
-        public void CLOSE(string clientname, string filename)
+        public void CLOSE(string clientname, string filename, string primaryPort)
         {
             IMDServer mdsclose = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8080/MetaData_Server");
+            , "tcp://localhost:" + primaryPort + "/MetaData_Server");
             mdsclose.CLOSE(filename);
         }
 
         public string READ(string clientname, string filename, string semantics)
         {
             string result = null;
-            System.Console.WriteLine("Read it!" + "\r\n");
-            foreach (KeyValuePair<string, string> value in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
             {
-                System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
-                if (value.Value.Equals(filename))
+
+                if (value.Key.Key.Equals(filename))
                 {
-                    string[] nserver = value.Key.Split('-');
-                    System.Console.WriteLine("nserver: " + nserver[1]);
-                    IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer), "tcp://localhost:807" + nserver[1] + "/Data_Server");
-                    result = dsread.READ(filename, semantics);
+                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value["Data Servers"];
+                    foreach (KeyValuePair<string, string> server in servers)
+                    {
+                        IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer), "tcp://localhost:" + server.Value + "/Data_Server");
+                        result = dsread.READ(filename, semantics);
+                    }
                 }
             }
             System.Console.WriteLine("File: " + filename + " Content: " + result);
@@ -113,17 +136,18 @@ namespace Client
 
         public void WRITE(string clientname, string filename, byte[] content)
         {
-            System.Console.WriteLine("Write this!" + "\r\n");
-            foreach (KeyValuePair<string, string> value in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
             {
-                System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
-                if (value.Value.Equals(filename))
+
+                if (value.Key.Key.Equals(filename))
                 {
-                    string[] nserver = value.Key.Split('-');
-                    System.Console.WriteLine("nserver: " + nserver[1]);
-                    IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
-                    , "tcp://localhost:807" + nserver[1] + "/Data_Server");
-                    dswrite.WRITE(filename, content);
+                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value["Data Servers"];
+                    foreach (KeyValuePair<string, string> server in servers)
+                    {
+                        IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
+                        , "tcp://localhost:807" + server.Value + "/Data_Server");
+                        dswrite.WRITE(filename, content);
+                    }
                 }
             }
         }
@@ -147,9 +171,9 @@ namespace Client
 
             System.Console.WriteLine("File List opened by this client: \r\n");
 
-            foreach (KeyValuePair<string, string> file in this.filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> file in filesClient)
             {
-                System.Console.WriteLine("File: " + file.Key + " Content: " + file.Value + "\r\n");
+                System.Console.WriteLine("File: " + file.Key.Key + " Content: " + file.Key.Value + "\r\n");
             }
         }
 
@@ -171,10 +195,10 @@ namespace Client
             {
 
                 case "OPEN":
-                    OPEN(command[1], command[3]);
+                    OPEN(command[1], command[3],command[5]);
                     break;
                 case "CLOSE":
-                    CLOSE(command[1], command[3]);
+                    CLOSE(command[1], command[3],command[5]);
                     break;
                 case "READ":
                     READ(command[1], command[3], command[5]);

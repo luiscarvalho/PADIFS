@@ -49,7 +49,6 @@ namespace MetaData_Server
         //private int read_quorum;
         //private int write_quorum;
         private List<KeyValuePair<string, string>> dataServerList;
-        private List<KeyValuePair<string, string>> dataServers;
         private List<KeyValuePair<string, string>> metaDataServersList;
         Hashtable dataServerLoad = new Hashtable();
         private string primaryMDS_name;
@@ -62,7 +61,6 @@ namespace MetaData_Server
         {
             mdTable = new DataTable();
             dataServerList = new List<KeyValuePair<string, string>>();
-            dataServers = new List<KeyValuePair<string, string>>();
             metaDataServersList = new List<KeyValuePair<string, string>>();
             dataServerLoad = new Hashtable();
             dataServerLoad.Add(0, new List<string>() { });
@@ -71,13 +69,10 @@ namespace MetaData_Server
             mdTable.Columns.Add("Read_Quorum", typeof(int));
             mdTable.Columns.Add("Write_Quorum", typeof(int));
             mdTable.Columns.Add("Data Servers", typeof(List<KeyValuePair<string, string>>));
+            mdTable.Columns.Add("Local Files", typeof(List<KeyValuePair<string, string>>));
             this.mdserver_name = mdsname;
             this.mdserver_port = port;
             mdTable.TableName.Insert(0, mdserver_name);
-
-
-            //numServer++;
-            //debug("Metadata server " + mdserver_name + " created.");
         }
 
         /**
@@ -201,14 +196,15 @@ namespace MetaData_Server
             return true;
         }
 
-        public void CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
+        public DataRow CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
         {
+            DataRow createResult = null;
+            List<KeyValuePair<string, string>> dataServers = new List<KeyValuePair<string,string>>();
+            List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string,byte[]>>();
             BackgroundWorker bwCreate = new BackgroundWorker();
             bwCreate.DoWork += new DoWorkEventHandler(
             delegate(object o, DoWorkEventArgs args)
             {
-                System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
-
                 lock (thisLock)
                 {
                     Hashtable dataServerLoadAux = new Hashtable();
@@ -221,10 +217,8 @@ namespace MetaData_Server
                     int done = 0;
                     if (nservers >= dservers)
                     {
-
                         while (nserverdone < dservers)
                         {
-
                             dserverListAux1 = (List<string>)dataServerLoadAux[i];
 
                             foreach (string dServer in dserverListAux1)
@@ -236,16 +230,15 @@ namespace MetaData_Server
                                     {
                                         try
                                         {
-                                            System.Console.WriteLine("File added in: " + dser.Key);
                                             string ds = dser.Key;
-                                            string serverpath = Directory.GetCurrentDirectory();
-                                            serverpath += Path.Combine(ds);
                                             IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
                                               , "tcp://localhost:" + dser.Value + "/Data_Server");
-                                            dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
+                                           byte[] createR = dsCreate.CREATE(fname + ".txt");
                                             done = 1;
                                             nserverdone += done;
                                             dataServers.Add(new KeyValuePair<string, string>(dser.Key, dser.Value));
+                                            localFileList.Add(new KeyValuePair<string, byte[]>(dser.Key, createR));
+                                            System.Console.WriteLine("File added in: " + dser.Key);
                                             if (nserverdone >= dservers) break;
                                         }
                                         catch (System.Net.Sockets.SocketException ex)
@@ -274,7 +267,7 @@ namespace MetaData_Server
                             i++;
                         }
 
-                        mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
+                        createResult = mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers,localFileList);
                         dataServerLoad = dataServerLoadAux;
                         System.Console.WriteLine("File " + fname + " created.");
 
@@ -286,7 +279,7 @@ namespace MetaData_Server
                                 {
                                     IMDServer mdsAddTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
                                                           , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
-                                    mdsAddTable.addMDServerTable(fname, dservers, rquorum, wquorum, dataServers, dataServerLoad);
+                                    mdsAddTable.addMDServerTable(fname, dservers, rquorum, wquorum, dataServers, dataServerLoad, localFileList);
                                 }
                                 catch (System.Net.Sockets.SocketException ex)
                                 {
@@ -302,16 +295,17 @@ namespace MetaData_Server
                 }
             });
             bwCreate.RunWorkerAsync();
+            return createResult;
         }
 
-        public void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers, Hashtable DServerLoad)
+        public void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers, Hashtable DServerLoad, List<KeyValuePair<string, byte[]>> localFList)
         {
             BackgroundWorker bwUpdate = new BackgroundWorker();
 
             bwUpdate.DoWork += new DoWorkEventHandler(
             delegate(object o, DoWorkEventArgs args)
             {
-                mdTable.Rows.Add(filename, nDServers, rquorum, wquorum, dataServers);
+                mdTable.Rows.Add(filename, nDServers, rquorum, wquorum, DServers, localFList);
                 dataServerLoad = DServerLoad;
             });
             bwUpdate.RunWorkerAsync();
@@ -374,7 +368,7 @@ namespace MetaData_Server
 
         public DataRow OPEN(string fname)
         {
-            DataRow openResult = new DataRow();
+            DataRow openResult = null;
 
             BackgroundWorker bwOpen = new BackgroundWorker();
 
