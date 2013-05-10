@@ -11,7 +11,7 @@ namespace PADICommonTypes
 
     public interface IMDServer
     {
-        List<KeyValuePair<string, string>> OPEN(string filename);
+        DataRow OPEN(string filename);
         void CLOSE(string filename);
         void CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
         void DELETE(string filename);

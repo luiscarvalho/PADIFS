@@ -7,6 +7,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Text;
 using System.Threading.Tasks;
 using PADICommonTypes;
+using System.Data;
 
 namespace Client
 {
@@ -72,7 +73,9 @@ namespace Client
             System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:8080/MetaData_Server");
-            List<KeyValuePair<string, string>> filesClientTemp = mdsopen.OPEN(filename);
+            DataRow rowResult = mdsopen.OPEN(filename);
+            List<KeyValuePair<string, string>> filesClientTemp = (List<KeyValuePair<string, string>> ) rowResult["Data Servers"];
+
             foreach (KeyValuePair<string, string> value in filesClientTemp)
             {
                 filesClient.Add(new KeyValuePair<string, string>(value.Key, value.Value));
@@ -140,7 +143,7 @@ namespace Client
 
         public void DUMP()
         {
-            System.Console.WriteLine("Client name: " + this.cname + "\r\n");
+            System.Console.WriteLine("Client name: " + this.clientname + "\r\n");
 
             System.Console.WriteLine("File List opened by this client: \r\n");
 

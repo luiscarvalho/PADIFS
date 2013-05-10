@@ -372,10 +372,9 @@ namespace MetaData_Server
             bwDelete.RunWorkerAsync();
         }
 
-        public List<KeyValuePair<string, string>> OPEN(string fname)
+        public DataRow OPEN(string fname)
         {
-            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string, string>>();
-            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string, string>>();
+            DataRow openResult = new DataRow();
 
             BackgroundWorker bwOpen = new BackgroundWorker();
 
@@ -391,23 +390,7 @@ namespace MetaData_Server
                         {
                             if (dr["Filename"].ToString() == fname)
                             {
-                                List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string, string>>)dr["Data Servers"];
-
-                                foreach (KeyValuePair<string, string> dserver in ldserver)
-                                {
-                                    openResult.Add(new KeyValuePair<string, string>(dr["Filename"].ToString() + ".txt", dserver.Key));
-                                    string ds = dserver.Key;
-                                    string serverpath = Directory.GetCurrentDirectory();
-                                    serverpath += Path.Combine(ds);
-
-                                    IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                                      , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                                    openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
-                                    foreach (KeyValuePair<string, string> value in openResultDS)
-                                    {
-                                        openResult.Add(new KeyValuePair<string, string>(value.Key, value.Value));
-                                    }
-                                }
+                                openResult = dr;
                             }
                         }
                     }
