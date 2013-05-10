@@ -132,6 +132,7 @@ namespace PuppetMaster
                 default:
                     break;
             }
+
         }
 
         private void Fail(string[] command)
@@ -367,7 +368,7 @@ namespace PuppetMaster
 
         private void Create(string[] command)
         {
-            DataRow dataRow;
+            DataRow dataRow = null;
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
