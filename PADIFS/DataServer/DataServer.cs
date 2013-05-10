@@ -30,7 +30,7 @@ namespace DataServer
             //servername = dserver.ToString();
             //dserver++;
             System.Console.WriteLine("Data Server " + args[0] + " start with port " + args[1]);
-            ds.Register(args[1]);
+            ds.Register(args[1], args[2]);
             System.Console.ReadLine();
         }
     }
@@ -59,6 +59,7 @@ namespace DataServer
             }
             numServer++;
             //debug("Data server" + dserver_name + "created.");
+
         }
 
         public void CREATE(string filename)
@@ -83,11 +84,11 @@ namespace DataServer
             return openResult;
         }
 
-        public void Register(string port)
+        public void Register(string DserverPort, string MDserverport)
         {
             IMDServer mdserverRegister = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                , "tcp://localhost:8080/MetaData_Server");
-            if (mdserverRegister.RegisteDServer(this.dserver_name, port))
+                , "tcp://localhost:"+MDserverport+"/MetaData_Server");
+            if (mdserverRegister.RegisteDServer(this.dserver_name, DserverPort))
             {
                 this.freezeServer = 0;
                 System.Console.WriteLine("Data Server " + this.dserver_name + " registered");

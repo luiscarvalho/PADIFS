@@ -14,14 +14,14 @@ namespace Client
     class Client
     {
         static string clientname;
-        
+
         static void Main(string[] args)
         {
             TcpChannel channel = new TcpChannel(Convert.ToInt32(args[1]));
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(Cliente), "ClientRemote",
             WellKnownObjectMode.Singleton);
-            Cliente c = new Cliente(args[0]);
+            Cliente c = new Cliente(args[0], args[1]);
             RemotingServices.Marshal(c, "ClientRemote", typeof(Cliente));
             clientname += args[0];
             System.Console.WriteLine("Client " + args[0] + " start with port " + args[1]);
@@ -35,21 +35,32 @@ namespace Client
     }
     public class Cliente : MarshalByRefObject, IClient
     {
-        string cname;
-        List<KeyValuePair<string, string>> filesClient = new List<KeyValuePair<string,string>>();
+        string clientname;
+        string clientport;
+        List<KeyValuePair<string, string>> filesClient = new List<KeyValuePair<string, string>>();
 
-        public Cliente(string clientname)
+        public Cliente(string clientname, string clientport)
         {
-            this.cname = clientname;
+            this.clientname = clientname;
+            this.clientport = clientport;
         }
 
         public void CREATE(string clientname, string filename, int nb_dataservers,
-            int read_quorum, int write_quorum)
+            int read_quorum, int write_quorum, string primaryPort)
         {
             System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
-            IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8080/MetaData_Server");
-           mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum);
+            try
+            {
+                IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                , "tcp://localhost:"+ primaryPort +"/MetaData_Server");
+               
+                mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, clientport);
+            }
+            catch (System.Net.Sockets.SocketException ex)
+            {
+                System.Console.WriteLine("Falha do Servidor Metadata, o seu pedido não foi efectuado.");
+                throw new RemotingException("Falha do Servidor Metadata com o porto: "+primaryPort);
+            }
         }
 
         public void OPEN(string clientname, string filename)
@@ -60,10 +71,10 @@ namespace Client
             List<KeyValuePair<string, string>> filesClientTemp = mdsopen.OPEN(filename);
             foreach (KeyValuePair<string, string> value in filesClientTemp)
             {
-                filesClient.Add(new KeyValuePair<string,string>(value.Key, value.Value));
+                filesClient.Add(new KeyValuePair<string, string>(value.Key, value.Value));
                 System.Console.WriteLine(value.Key + " " + value.Value);
             }
-            
+
 
         }
 
@@ -77,7 +88,7 @@ namespace Client
         public string READ(string clientname, string filename, string semantics)
         {
             string result = null;
-            System.Console.WriteLine("Read it!"+"\r\n");
+            System.Console.WriteLine("Read it!" + "\r\n");
             foreach (KeyValuePair<string, string> value in filesClient)
             {
                 System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
@@ -89,13 +100,13 @@ namespace Client
                     result = dsread.READ(filename, semantics);
                 }
             }
-            System.Console.WriteLine("File: " + filename + " Content: " + result); 
+            System.Console.WriteLine("File: " + filename + " Content: " + result);
             return result;
         }
 
         public void WRITE(string clientname, string filename, byte[] content)
         {
-            System.Console.WriteLine("Write this!"+"\r\n");
+            System.Console.WriteLine("Write this!" + "\r\n");
             foreach (KeyValuePair<string, string> value in filesClient)
             {
                 System.Console.WriteLine("Key: " + value.Key + " " + "Value: " + value.Value);
@@ -137,12 +148,12 @@ namespace Client
 
         public void EXESCRIPT(string clientname, string script)
         {
-           string[] scriptFile = System.IO.File.ReadAllLines(@script);
+            string[] scriptFile = System.IO.File.ReadAllLines(@script);
 
-           foreach (string command in scriptFile)
-           {
-               executeCommand(command);
-           }
+            foreach (string command in scriptFile)
+            {
+                executeCommand(command);
+            }
         }
 
         private void executeCommand(string commandline)
@@ -153,25 +164,25 @@ namespace Client
             {
 
                 case "OPEN":
-                    OPEN(command[1],command[3]);
+                    OPEN(command[1], command[3]);
                     break;
                 case "CLOSE":
-                    CLOSE(command[1],command[3]);
+                    CLOSE(command[1], command[3]);
                     break;
                 case "READ":
-                    READ(command[1],command[3],command[5]);
+                    READ(command[1], command[3], command[5]);
                     break;
                 case "WRITE":
-                    WRITE(command[1],command[3],Encoding.ASCII.GetBytes(command[5]));
+                    WRITE(command[1], command[3], Encoding.ASCII.GetBytes(command[5]));
                     break;
                 case "DUMP":
                     DUMP();
                     break;
                 case "DELETE":
-                    DELETE(command[1],command[3]);
+                    DELETE(command[1], command[3]);
                     break;
                 case "EXESCRIPT":
-                    EXESCRIPT(command[1],command[3]);
+                    EXESCRIPT(command[1], command[3]);
                     break;
                 default:
                     break;

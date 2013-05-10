@@ -135,14 +135,12 @@ namespace PuppetMaster
 
         private void Fail(string[] command)
         {
-            DataTable newMD = new DataTable();
-            String newMDServer = null;
 
             if (metadataList.Contains(command[1]))
             {
                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                newMD = mdsFail.FAIL(command[1]);
+                mdsFail.FAIL(command[1]);
                 string[] nserver = command[1].Split('-');
                 foreach (DictionaryEntry mdProc in processList)
                 {
@@ -159,7 +157,6 @@ namespace PuppetMaster
                     {
                         IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
                                         , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
-                        mdsLoad.loadMDServer(newMD);
                     }
 
                 }
@@ -355,7 +352,8 @@ namespace PuppetMaster
             {
                 // comando que lança um processo dataserver
                 string[] nserver = command[1].Split('-');
-                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe", command[1].ToString() + " 807" + nserver[1].ToString());
+                System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe",
+                    command[1].ToString() + " 807" + nserver[1].ToString() + " " + metadataList[primaryMDserver].ToString());
                 infoTX.Text = infoTX.Text + "Start data server: " + command[1] + " with port: " + "807" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "807" + nserver[1]);
             }
@@ -369,6 +367,7 @@ namespace PuppetMaster
             if (metadataList.Contains(command[1]))
             {
                 infoTX.Text += "O metadata server: " + command[1] + "já se encontra online" + "\r\n";
+                return;
             }
 
             infoTX.Text += Directory.GetCurrentDirectory().ToString() + "\r\n";
@@ -394,9 +393,17 @@ namespace PuppetMaster
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
-                IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
-                   , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]));
+                try
+                {
+                    IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
+                       , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
+                    cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                }
+                catch (RemotingException ex)
+                {
+                    infoTX.Text = infoTX.Text + ex.Message + "\r\n";
+                    // O primary falhou temos de escolher outro como primary
+                }
             }
             else
             {
@@ -405,10 +412,18 @@ namespace PuppetMaster
                 System.Diagnostics.Process.Start(".\\Client\\bin\\Debug\\Client.exe", command[1] + " 806" + nclient[1]);
                 infoTX.Text = infoTX.Text + "Start Client: " + command[1] + " with port: " + " 806" + nclient[1] + "\r\n";
                 clientList.Add(command[1], "806" + nclient[1]);
-                IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
-                    , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
-                Thread.Sleep(1000);
-                cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]));
+                try
+                {
+                    IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
+                        , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
+                    Thread.Sleep(1000);
+                    cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                }
+                catch (RemotingException ex)
+                {
+                    infoTX.Text = infoTX.Text + ex.Message + "\r\n";
+                    // O primary falhou temos de escolher outro como primary
+                }
             }
         }
 

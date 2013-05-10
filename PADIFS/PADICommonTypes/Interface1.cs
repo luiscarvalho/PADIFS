@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -12,17 +13,17 @@ namespace PADICommonTypes
     {
         List<KeyValuePair<string, string>> OPEN(string filename);
         void CLOSE(string filename);
-        void CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum);
+        void CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
         void DELETE(string filename);
         void RECOVER(string mdserver);
-        DataTable FAIL(string mdserver);
+        void FAIL(string mdserver);
         void loadMDServer(DataTable MDtable);
         void primaryMDServer(string mdserver_name, string mdserverport);
         void aliveMDServer(string mdserver_name, string mdserverport);
         void sendMDServer(DataTable MDtable, List<KeyValuePair<string, string>> DServerList);
-        void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers);
-        void delMDServerTable(string filename);
-        DataTable copyMDServer();
+        void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers, Hashtable dataServerLoad);
+        //void registeDS(string dservername, string port);
+        //DataTable copyMDServer();
         void DUMP();
         bool RegisteDServer(string dservername, string port);
     }
@@ -43,7 +44,7 @@ namespace PADICommonTypes
     public interface IClient 
     {
         void CREATE(string clientname, string filename, int nb_dataservers,
-                int read_quorum, int write_quorum);
+                int read_quorum, int write_quorum, string primaryPort);
         void OPEN(string clientname, string filename);
         void CLOSE(string clientname, string filename);
         string READ(string clientname, string filename, string semantics);
