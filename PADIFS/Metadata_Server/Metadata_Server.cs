@@ -9,6 +9,9 @@ using System.Text;
 using System.Threading.Tasks;
 using PADICommonTypes;
 using System.IO;
+using System.Threading;
+using System.ComponentModel;
+
 
 namespace MetaData_Server
 {
@@ -24,7 +27,7 @@ namespace MetaData_Server
             ChannelServices.RegisterChannel(channel, false);
             RemotingConfiguration.RegisterWellKnownServiceType(typeof(MDServer), "MetaData_Server",
             WellKnownObjectMode.Singleton);
-            MDServer mds = new MDServer(args[0]);
+            MDServer mds = new MDServer(args[0], args[1]);
             RemotingServices.Marshal(mds, "MetaData_Server", typeof(MDServer));
 
             //servername = args[0];
@@ -37,6 +40,7 @@ namespace MetaData_Server
     {
         private DataTable mdTable;
         private string mdserver_name = "m-";
+        private string mdserver_port;
         //private string filename;
         //private int numServer = 0;
         private int failServer = 0;
@@ -45,18 +49,23 @@ namespace MetaData_Server
         //private int write_quorum;
         private List<KeyValuePair<string, string>> dataServerList;
         private List<KeyValuePair<string, string>> dataServers;
+        private List<KeyValuePair<string, string>> metaDataServersList;
+        private string primaryMDS_name;
+        private string primaryMDS_port;
 
-        public MDServer(string mdsname)
+        public MDServer(string mdsname, string port)
         {
             mdTable = new DataTable();
             dataServerList = new List<KeyValuePair<string, string>>();
             dataServers = new List<KeyValuePair<string, string>>();
+            metaDataServersList = new List<KeyValuePair<string, string>>();
             mdTable.Columns.Add("Filename", typeof(string));
             mdTable.Columns.Add("NB_DataServers", typeof(int));
             mdTable.Columns.Add("Read_Quorum", typeof(int));
             mdTable.Columns.Add("Write_Quorum", typeof(int));
             mdTable.Columns.Add("Data Servers", typeof(List<KeyValuePair<string, string>>));
             this.mdserver_name = mdsname;
+            this.mdserver_port = port;
             mdTable.TableName.Insert(0, mdserver_name);
 
 
@@ -64,131 +73,287 @@ namespace MetaData_Server
             //debug("Metadata server " + mdserver_name + " created.");
         }
 
-        public DataTable copyMDServer(){
-
+        public DataTable copyMDServer()
+        {
             DataTable copyMD = new DataTable();
-            copyMD = this.mdTable;
+            BackgroundWorker bwCopy = new BackgroundWorker();
 
+            bwCopy.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+
+                copyMD = this.mdTable;
+
+            });
+            bwCopy.RunWorkerAsync();
             return copyMD;
-        
         }
 
-        public void loadMDServer(DataTable MDtable) {
+        public void loadMDServer(DataTable MDtable)
+        {
+            BackgroundWorker bwLoad = new BackgroundWorker();
 
-            this.mdTable = MDtable;
-        
+            bwLoad.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                if (!MDtable.Equals(null))
+                {
+                    this.mdTable = MDtable;
+                }
+            });
+            bwLoad.RunWorkerAsync();
+        }
+
+        public void primaryMDServer(string mds_name, string mds_port)
+        {
+            BackgroundWorker bwprimary = new BackgroundWorker();
+
+            bwprimary.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                this.primaryMDS_name = mds_name;
+                this.primaryMDS_port = mds_port;
+                IMDServer mdsAlive = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                       , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
+                mdsAlive.aliveMDServer(this.mdserver_name, this.mdserver_port);
+            });
+            bwprimary.RunWorkerAsync();
+        }
+
+        public void aliveMDServer(string mds_name, string mds_port)
+        {
+            BackgroundWorker bwAlive = new BackgroundWorker();
+
+            bwAlive.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                metaDataServersList.Add(new KeyValuePair<string, string>(mds_name, mds_port));
+                IMDServer mdsSendTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                       , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
+                mdsSendTable.sendMDServer(mdTable, dataServerList);
+            });
+            bwAlive.RunWorkerAsync();
+        }
+
+        public void sendMDServer(DataTable mdtable, List<KeyValuePair<string, string>> dserverList)
+        {
+            BackgroundWorker bwSend = new BackgroundWorker();
+
+            bwSend.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+                this.mdTable = mdtable;
+                this.metaDataServersList = dserverList;
+            });
+            bwSend.RunWorkerAsync();
         }
 
         public bool RegisteDServer(string dservername, string port)
         {
-            System.Console.WriteLine("Metadata server " + mdserver_name + ": "+ dservername +" registered.");
-            dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+            BackgroundWorker bwRegister = new BackgroundWorker();
+
+            bwRegister.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                System.Console.WriteLine("Metadata server " + mdserver_name + ": " + dservername + " registered.");
+                dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+            });
+            bwRegister.RunWorkerAsync();
             return true;
         }
+
         public void CREATE(string fname, int dservers, int rquorum, int wquorum)
         {
-            System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
-            int nservers = dataServerList.Count();
-            int i = 0;
-            foreach (KeyValuePair<string,string> dserver in dataServerList)
+            BackgroundWorker bwCreate = new BackgroundWorker();
+
+            bwCreate.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
             {
-                if (i == nservers || i == dservers)
+                System.Console.WriteLine("Create : cheguei aqui!" + "\r\n");
+                int nservers = dataServerList.Count();
+                int i = 0;
+                foreach (KeyValuePair<string, string> dserver in dataServerList)
                 {
-                    break;
-                }
+                    if (i == nservers || i == dservers)
+                    {
+                        break;
+                    }
 
-                if(!dataServers.Contains(new KeyValuePair<string, string>(dserver.Key, dserver.Value))){
-                    dataServers.Add(new KeyValuePair<string, string>(dserver.Key, dserver.Value));
-                }
-                System.Console.WriteLine("File added in: " + dserver.Key);
-                string ds = dserver.Key;
-                string serverpath = Directory.GetCurrentDirectory();
-                serverpath += Path.Combine(ds);
-                IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                  , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
+                    if (!dataServers.Contains(new KeyValuePair<string, string>(dserver.Key, dserver.Value)))
+                    {
+                        dataServers.Add(new KeyValuePair<string, string>(dserver.Key, dserver.Value));
+                    }
+                    System.Console.WriteLine("File added in: " + dserver.Key);
+                    string ds = dserver.Key;
+                    string serverpath = Directory.GetCurrentDirectory();
+                    serverpath += Path.Combine(ds);
+                    IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                      , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                    dsCreate.CREATE(serverpath + "\\" + fname + ".txt");
 
-//                if (Directory.Exists(serverpath))
-//                {
-//                    File.CreateText(serverpath + "\\" + fname + ".txt");
-//                }
-//                i++;
-            }
-            mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
-            System.Console.WriteLine("File " + fname + " created.");
+                    //                if (Directory.Exists(serverpath))
+                    //                {
+                    //                    File.CreateText(serverpath + "\\" + fname + ".txt");
+                    //                }
+                    //                i++;
+                }
+                mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
+                System.Console.WriteLine("File " + fname + " created.");
+
+                foreach (KeyValuePair<string, string> mdserver in this.metaDataServersList)
+                {
+                    IMDServer mdsAddTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                          , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
+                    mdsAddTable.addMDServerTable(fname, dservers, rquorum, wquorum, dataServers);
+                }
+            });
+            bwCreate.RunWorkerAsync();
+        }
+
+        public void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers)
+        {
+            BackgroundWorker bwUpdate = new BackgroundWorker();
+
+            bwUpdate.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                mdTable.Rows.Add(filename, nDServers, rquorum, wquorum, dataServers);
+            });
+            bwUpdate.RunWorkerAsync();
         }
 
         public void DELETE(string fname)
         {
+            BackgroundWorker bwDelete = new BackgroundWorker();
+
+            bwDelete.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                        dr.Delete();
+                }
+                foreach (KeyValuePair<string, string> mdserver in this.metaDataServersList)
+                {
+                    IMDServer mdsDelTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                          , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
+                    mdsDelTable.delMDServerTable(fname);
+                }
+            });
+            bwDelete.RunWorkerAsync();
+        }
+
+        public void delMDServerTable(string filename)
+        {
             foreach (DataRow dr in mdTable.Rows)
             {
-                if (dr["Filename"].ToString() == fname)
+                if (dr["Filename"].ToString() == filename)
                     dr.Delete();
             }
         }
 
         public List<KeyValuePair<string, string>> OPEN(string fname)
         {
-            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string,string>>();
-            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string,string>>();
-            foreach (DataRow dr in mdTable.Rows)
-            {
-                if (dr["Filename"].ToString() == fname)
-                {
-                    List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string,string>>) dr["Data Servers"];
+            List<KeyValuePair<string, string>> openResult = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, string>> openResultDS = new List<KeyValuePair<string, string>>();
 
-                    foreach (KeyValuePair<string, string> dserver in ldserver){
-                        openResult.Add(new KeyValuePair<string,string>(dr["Filename"].ToString() +".txt",dserver.Key));
-                        string ds = dserver.Key;
-                        string serverpath = Directory.GetCurrentDirectory();
-                        serverpath += Path.Combine(ds);
-                        
-                        IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                          , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                        openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
-                        foreach (KeyValuePair<string,string> value in openResultDS)
+            BackgroundWorker bwOpen = new BackgroundWorker();
+
+            bwOpen.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                    {
+                        List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string, string>>)dr["Data Servers"];
+
+                        foreach (KeyValuePair<string, string> dserver in ldserver)
                         {
-                            openResult.Add(new KeyValuePair<string,string>(value.Key, value.Value));
+                            openResult.Add(new KeyValuePair<string, string>(dr["Filename"].ToString() + ".txt", dserver.Key));
+                            string ds = dserver.Key;
+                            string serverpath = Directory.GetCurrentDirectory();
+                            serverpath += Path.Combine(ds);
+
+                            IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                              , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                            openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
+                            foreach (KeyValuePair<string, string> value in openResultDS)
+                            {
+                                openResult.Add(new KeyValuePair<string, string>(value.Key, value.Value));
+                            }
                         }
                     }
                 }
-            }
+            });
+            bwOpen.RunWorkerAsync();
             return openResult;
         }
 
         public void CLOSE(string fname)
         {
-            foreach (DataRow dr in mdTable.Rows)
-            {
-                if (dr["Filename"].ToString() == fname)
-                {
-                    dr.CancelEdit();
-                    dr.EndEdit();
-                }
-            }
+            BackgroundWorker bwClose = new BackgroundWorker();
 
+            bwClose.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                foreach (DataRow dr in mdTable.Rows)
+                {
+                    if (dr["Filename"].ToString() == fname)
+                    {
+                        dr.CancelEdit();
+                        dr.EndEdit();
+                    }
+                }
+            });
+            bwClose.RunWorkerAsync();
         }
 
         public DataTable FAIL(string mdserver)
         {
-            mdTable.EndInit();
-            mdTable.EndLoadData();
-            failServer = 1;
+            BackgroundWorker bwFail = new BackgroundWorker();
 
+            bwFail.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
+            {
+                BackgroundWorker b = o as BackgroundWorker;
+
+                mdTable.EndInit();
+                mdTable.EndLoadData();
+                failServer = 1;
+            });
+            bwFail.RunWorkerAsync();
             return copyMDServer();
+
         }
 
         public void RECOVER(string mdserver)
         {
-            if (failServer == 0)
+            BackgroundWorker bwRecover = new BackgroundWorker();
+
+            bwRecover.DoWork += new DoWorkEventHandler(
+            delegate(object o, DoWorkEventArgs args)
             {
-               //new MDServer(new DebugDelegate(debug));
-            }
-            else
-            {
-                this.mdTable = mdTable.Clone();
-                failServer = 0;
-            }
+                BackgroundWorker b = o as BackgroundWorker;
+
+                if (failServer == 0)
+                {
+                    //new MDServer(new DebugDelegate(debug));
+                }
+                else
+                {
+                    this.mdTable = mdTable.Clone();
+                    failServer = 0;
+                }
+            });
+            bwRecover.RunWorkerAsync();
         }
 
         public void DUMP()

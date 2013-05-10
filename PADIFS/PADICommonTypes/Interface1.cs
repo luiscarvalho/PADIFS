@@ -17,6 +17,12 @@ namespace PADICommonTypes
         void RECOVER(string mdserver);
         DataTable FAIL(string mdserver);
         void loadMDServer(DataTable MDtable);
+        void primaryMDServer(string mdserver_name, string mdserverport);
+        void aliveMDServer(string mdserver_name, string mdserverport);
+        void sendMDServer(DataTable MDtable, List<KeyValuePair<string, string>> DServerList);
+        void addMDServerTable(string filename, int nDServers, int rquorum, int wquorum, List<KeyValuePair<string, string>> DServers);
+        void delMDServerTable(string filename);
+        DataTable copyMDServer();
         void DUMP();
         bool RegisteDServer(string dservername, string port);
     }
