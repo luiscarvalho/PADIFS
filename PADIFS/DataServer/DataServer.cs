@@ -45,7 +45,7 @@ namespace DataServer
         private int freezeServer;
         private int failServer = 0;
         private string serverpath;
-        private List<KeyValuePair<string, KeyValuePair<int, byte[]>>> fileList = new List<KeyValuePair<string, KeyValuePair<int, byte[]>>>();
+        private List<KeyValuePair<string, KeyValuePair<byte[],int>>> fileList = new List<KeyValuePair<string, KeyValuePair<byte[],int>>>();
         private List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string, byte[]>>();
         static ReaderWriterLock rwl = new ReaderWriterLock();
         static int readerTimeouts = 0;
@@ -67,8 +67,8 @@ namespace DataServer
 
         public byte[] CREATE(string filename)
         {
-            fileList.Add(new KeyValuePair<string, KeyValuePair<int, byte[]>>(filename,
-                new KeyValuePair<int, byte[]>(0, System.Text.Encoding.ASCII.GetBytes(""))));
+            fileList.Add(new KeyValuePair<string, KeyValuePair<byte[],int>>(filename,
+                new KeyValuePair<byte[],int>(System.Text.Encoding.ASCII.GetBytes(""),0)));
             System.Console.WriteLine("File " + filename + " created." + "\r\n");
             localFileList.Add(new KeyValuePair<string, byte[]>(filename, System.Text.Encoding.ASCII.GetBytes(filename)));
             return System.Text.Encoding.ASCII.GetBytes(filename);
@@ -110,23 +110,23 @@ namespace DataServer
                 {
                     if (freezeServer == 0)
                     {
-                        foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                        foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in fileList)
                         {
                             if (file.Key.Equals(new string(fileName)))
                             {
-                                for (int i = 0; i <= file.Value.Key; i++)
+                                for (int i = 0; i <= file.Value.Value; i++)
                                 {
                                     // procurar ultima versao
                                     if (semantics.Equals("default"))
                                     {
-                                        i = file.Value.Key;
+                                        i = file.Value.Value;
                                         System.Console.WriteLine("Versao do ficheiro n: " + i);
                                     }
 
                                     if (file.Value.Key.Equals(i))
                                     {
-                                        System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Value));
-                                        result = System.Text.Encoding.UTF8.GetString(file.Value.Value);
+                                        System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Key));
+                                        result = System.Text.Encoding.UTF8.GetString(file.Value.Key);
                                     }
                                 }
                             }
@@ -161,15 +161,15 @@ namespace DataServer
                 try
                 {
                     string fileName = null;
-                    KeyValuePair<string, KeyValuePair<int, byte[]>> result = new KeyValuePair<string, KeyValuePair<int, byte[]>>();
+                    KeyValuePair<string, KeyValuePair<byte[],int>> result = new KeyValuePair<string, KeyValuePair<byte[],int>>();
                     if (freezeServer == 0)
                     {
-                        foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in fileList)
+                        foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in fileList)
                         {
                             if (file.Key.Equals(fileName))
                             {
-                                result = new KeyValuePair<string, KeyValuePair<int, byte[]>>(fileName,
-                        new KeyValuePair<int, byte[]>((file.Value.Key) + 1, content));
+                                result = new KeyValuePair<string, KeyValuePair<byte[],int>>(fileName,
+                        new KeyValuePair<byte[],int>(content,(file.Value.Value) + 1));
                             }
                         }
                         fileList.Add(result);
@@ -249,10 +249,10 @@ namespace DataServer
 
             System.Console.WriteLine("File List: \r\n");
 
-            foreach (KeyValuePair<string, KeyValuePair<int, byte[]>> file in this.fileList)
+            foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in this.fileList)
             {
-                System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Key + " Content: "
-                    + System.Text.Encoding.UTF8.GetString(file.Value.Value) + "\r\n");
+                System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Value + " Content: "
+                    + System.Text.Encoding.UTF8.GetString(file.Value.Key) + "\r\n");
             }
 
             System.Console.WriteLine("Local File List: \r\n");

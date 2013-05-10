@@ -43,10 +43,10 @@ namespace PADICommonTypes
 
     public interface IClient 
     {
-        void CREATE(string clientname, string filename, int nb_dataservers,
+        DataRow CREATE(string clientname, string filename, int nb_dataservers,
                 int read_quorum, int write_quorum, string primaryPort);
-        void OPEN(string clientname, string filename);
-        void CLOSE(string clientname, string filename);
+        DataRow OPEN(string clientname, string filename, string primaryPort);
+        void CLOSE(string clientname, string filename, string primaryPort);
         string READ(string clientname, string filename, string semantics);
         void WRITE(string clientname, string filename, byte[] content);
         void DELETE(string clientname, string filename);

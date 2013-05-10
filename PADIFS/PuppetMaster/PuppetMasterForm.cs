@@ -29,6 +29,8 @@ namespace PuppetMaster
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
         Hashtable processList = new Hashtable();
+        List<KeyValuePair<int, DataRow>> filesRegister = new List<KeyValuePair<int, DataRow>>();
+        int fileR = 0;
         string primaryMDserver;
         private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
 
@@ -36,7 +38,6 @@ namespace PuppetMaster
         public PuppetMasterForm()
         {
             InitializeComponent();
-
         }
 
         private void PuppetMasterForm_Load(object sender, EventArgs e)
@@ -135,36 +136,12 @@ namespace PuppetMaster
 
         private void Fail(string[] command)
         {
-
             if (metadataList.Contains(command[1]))
             {
                 IMDServer mdsFail = (IMDServer)Activator.GetObject(typeof(IMDServer)
                    , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
                 mdsFail.FAIL(command[1]);
-                string[] nserver = command[1].Split('-');
-                foreach (DictionaryEntry mdProc in processList)
-                {
-                    if (mdProc.Key.ToString().Equals(metadataList[command[1]]))
-                    {
-                        Process[] mdKill = Process.GetProcessesByName(mdProc.Value.ToString());
-                        mdKill[Int32.Parse(nserver[1])].Kill();
-                    }
-                }
                 metadataList.Remove(command[1]);
-                if (metadataList.Count > 1)
-                {
-                    foreach (String MDServer in metadataList.Keys)
-                    {
-                        IMDServer mdsLoad = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                        , "tcp://localhost:" + metadataList[MDServer] + "/MetaData_Server");
-                    }
-
-                }
-                else
-                {
-                    Recover(command);
-                }
-
             }
             else if (dataserverList.Contains(command[1]))
             {
@@ -212,7 +189,7 @@ namespace PuppetMaster
             {
                 IClient cClose = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cClose.CLOSE(command[1], command[2]);
+                cClose.CLOSE(command[1], command[2], metadataList[this.primaryMDserver].ToString());
             }
             else
             {
@@ -390,6 +367,7 @@ namespace PuppetMaster
 
         private void Create(string[] command)
         {
+            DataRow dataRow;
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
@@ -397,12 +375,24 @@ namespace PuppetMaster
                 {
                     IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                        , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                    cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                    dataRow = cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                    filesRegister.Add(new KeyValuePair<int, DataRow>(fileR, dataRow));
+                    showInfo(fileR, dataRow);
+                    fileR++;
                 }
                 catch (RemotingException ex)
                 {
                     infoTX.Text = infoTX.Text + ex.Message + "\r\n";
-                    // O primary falhou temos de escolher outro como primary
+                    // O primário falhou temos de escolher outro como primário
+                    metadataList.Remove(primaryMDserver);
+                    if (metadataList.Count > 0)
+                    {
+                        foreach (string mdserver in metadataList.Keys)
+                        {
+                            primaryMDserver = mdserver;
+                            break;
+                        }
+                    }
                 }
             }
             else
@@ -417,13 +407,39 @@ namespace PuppetMaster
                     IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                         , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
                     Thread.Sleep(1000);
-                    cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                    dataRow = cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
+                    filesRegister.Add(new KeyValuePair<int, DataRow>(fileR, dataRow));
+                    showInfo(fileR, dataRow);
+                    fileR++;
                 }
                 catch (RemotingException ex)
                 {
                     infoTX.Text = infoTX.Text + ex.Message + "\r\n";
-                    // O primary falhou temos de escolher outro como primary
+                    // O primário falhou temos de escolher outro como primário
+                    metadataList.Remove(primaryMDserver);
+                    if (metadataList.Count > 0)
+                    {
+                        foreach (string mdserver in metadataList.Keys)
+                        {
+                            primaryMDserver = mdserver;
+                            break;
+                        }
+                    }
                 }
+            }
+        }
+
+        private void showInfo(int fileR, DataRow dataRow)
+        {
+            infoTX.Text = infoTX.Text + "File-Register " + fileR + " info:\r\n";
+            infoTX.Text = infoTX.Text + "Filename - " + dataRow["Filename"] + "\r\n";
+            infoTX.Text = infoTX.Text + "Número de Data Servers - " + dataRow["NB_DataServers"] + "\r\n";
+            infoTX.Text = infoTX.Text + "Read Quorum - " + dataRow["Read_Quorum"] + "\r\n";
+            infoTX.Text = infoTX.Text + "Write Quorum - " + dataRow["Write_Quorum"] + "\r\n";
+            infoTX.Text = infoTX.Text + "Data Servers:\r\n";
+            foreach (KeyValuePair<string, string> dserver in (List<KeyValuePair<string, string>>)dataRow["Data Servers"])
+            {
+                infoTX.Text = infoTX.Text + dserver.Key + " - " + dserver.Value + "\r\n";
             }
         }
 
@@ -434,7 +450,7 @@ namespace PuppetMaster
                 // Commands client to create a file
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                    , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cOpen.OPEN(command[1], command[3]);
+                cOpen.OPEN(command[1], command[3], metadataList[this.primaryMDserver].ToString());
             }
             else
             {
@@ -445,7 +461,7 @@ namespace PuppetMaster
                 clientList.Add(command[1], "806" + nclient[1]);
                 IClient cOpen = (IClient)Activator.GetObject(typeof(IClient)
                     , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
-                cOpen.OPEN(command[1], command[3]);
+                cOpen.OPEN(command[1], command[3], metadataList[this.primaryMDserver].ToString());
             }
         }
     }

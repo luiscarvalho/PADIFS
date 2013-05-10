@@ -49,7 +49,7 @@ namespace Client
             this.clientport = clientport;
         }
 
-        public void CREATE(string clientname, string filename, int nb_dataservers,
+        public DataRow CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, string primaryPort)
         {
             DataRow createResult = null;
@@ -78,10 +78,12 @@ namespace Client
             catch (RemotingException ey)
             {
                 System.Console.WriteLine(ey.Message + "\r\n");
+                throw new RemotingException("Não foi possível satisfazer o pedido: Data Servers insuficientes");
             }
+            return createResult;
         }
 
-        public void OPEN(string clientname, string filename, string primaryPort)
+        public DataRow OPEN(string clientname, string filename, string primaryPort)
         {
             System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
@@ -103,7 +105,7 @@ namespace Client
                 }
 
             }
-
+            return rowResult;
 
         }
 
@@ -112,6 +114,8 @@ namespace Client
             IMDServer mdsclose = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:" + primaryPort + "/MetaData_Server");
             mdsclose.CLOSE(filename);
+
+
         }
 
         public string READ(string clientname, string filename, string semantics)

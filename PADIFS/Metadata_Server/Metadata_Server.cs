@@ -201,10 +201,10 @@ namespace MetaData_Server
             DataRow createResult = null;
             List<KeyValuePair<string, string>> dataServers = new List<KeyValuePair<string,string>>();
             List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string,byte[]>>();
-            BackgroundWorker bwCreate = new BackgroundWorker();
-            bwCreate.DoWork += new DoWorkEventHandler(
-            delegate(object o, DoWorkEventArgs args)
-            {
+            //BackgroundWorker bwCreate = new BackgroundWorker();
+            //bwCreate.DoWork += new DoWorkEventHandler(
+            //delegate(object o, DoWorkEventArgs args)
+            //{
                 lock (thisLock)
                 {
                     Hashtable dataServerLoadAux = new Hashtable();
@@ -290,11 +290,11 @@ namespace MetaData_Server
                     }
                     else
                     {
-                        throw new RemotingException("Falha do Servidor não foi possível satisfazer o pedido");
+                        throw new RemotingException("Não foi possível satisfazer o pedido: Data Servers insuficientes");
                     }
                 }
-            });
-            bwCreate.RunWorkerAsync();
+           // });
+           // bwCreate.RunWorkerAsync();
             return createResult;
         }
 
