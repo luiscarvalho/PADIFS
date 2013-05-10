@@ -309,6 +309,7 @@ namespace MetaData_Server
             delegate(object o, DoWorkEventArgs args)
             {
                 mdTable.Rows.Add(filename, nDServers, rquorum, wquorum, dataServers);
+                dataServerLoad = DServerLoad;
             });
             bwUpdate.RunWorkerAsync();
         }
