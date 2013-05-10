@@ -54,6 +54,8 @@ namespace MetaData_Server
         Hashtable dataServerLoad = new Hashtable();
         private string primaryMDS_name;
         private string primaryMDS_port;
+        static ReaderWriterLock rwl = new ReaderWriterLock();
+        static int readerTimeouts = 0;
         private Object thisLock = new Object();
 
         public MDServer(string mdsname, string port)
@@ -215,7 +217,7 @@ namespace MetaData_Server
                     List<string> dserverListAux2;
                     int nservers = dataServerList.Count();
                     int nserverdone = 0;
-                    int i;
+                    int i = 0;
                     int done = 0;
                     if (nservers >= dservers)
                     {
@@ -269,6 +271,7 @@ namespace MetaData_Server
                                     }
                                 }
                             }
+                            i++;
                         }
 
                         mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers);
@@ -335,8 +338,8 @@ namespace MetaData_Server
 
                             foreach (KeyValuePair<string, string> server in serversList)
                             {
-                                i=1;
-                                while(dataServerLoad.Count > i)
+                                i = 1;
+                                while (dataServerLoad.Count > i)
                                 {
                                     serverListAux1 = (List<string>)dataServerLoad[i];
                                     serverListAux2 = (List<string>)dataServerLoad[i - 1];
@@ -347,7 +350,7 @@ namespace MetaData_Server
                                             serverListAux1.Remove(serv);
                                             serverListAux2.Add(serv);
                                             dataServerLoad.Add(i, serverListAux1);
-                                            dataServerLoad.Add(i-1, serverListAux2);
+                                            dataServerLoad.Add(i - 1, serverListAux2);
                                             break;
                                         }
                                     }
@@ -357,7 +360,7 @@ namespace MetaData_Server
                             break;
                         }
                     }
-                    
+
                     foreach (KeyValuePair<string, string> mdserver in this.metaDataServersList)
                     {
                         IMDServer mdsDelTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
@@ -379,29 +382,45 @@ namespace MetaData_Server
             bwOpen.DoWork += new DoWorkEventHandler(
             delegate(object o, DoWorkEventArgs args)
             {
-
-                foreach (DataRow dr in mdTable.Rows)
+                try
                 {
-                    if (dr["Filename"].ToString() == fname)
+                    rwl.AcquireReaderLock(20);
+                    try
                     {
-                        List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string, string>>)dr["Data Servers"];
-
-                        foreach (KeyValuePair<string, string> dserver in ldserver)
+                        foreach (DataRow dr in mdTable.Rows)
                         {
-                            openResult.Add(new KeyValuePair<string, string>(dr["Filename"].ToString() + ".txt", dserver.Key));
-                            string ds = dserver.Key;
-                            string serverpath = Directory.GetCurrentDirectory();
-                            serverpath += Path.Combine(ds);
-
-                            IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                              , "tcp://localhost:" + dserver.Value + "/Data_Server");
-                            openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
-                            foreach (KeyValuePair<string, string> value in openResultDS)
+                            if (dr["Filename"].ToString() == fname)
                             {
-                                openResult.Add(new KeyValuePair<string, string>(value.Key, value.Value));
+                                List<KeyValuePair<string, string>> ldserver = (List<KeyValuePair<string, string>>)dr["Data Servers"];
+
+                                foreach (KeyValuePair<string, string> dserver in ldserver)
+                                {
+                                    openResult.Add(new KeyValuePair<string, string>(dr["Filename"].ToString() + ".txt", dserver.Key));
+                                    string ds = dserver.Key;
+                                    string serverpath = Directory.GetCurrentDirectory();
+                                    serverpath += Path.Combine(ds);
+
+                                    IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                                      , "tcp://localhost:" + dserver.Value + "/Data_Server");
+                                    openResultDS = dsCreate.OPEN(serverpath + "\\" + fname + ".txt");
+                                    foreach (KeyValuePair<string, string> value in openResultDS)
+                                    {
+                                        openResult.Add(new KeyValuePair<string, string>(value.Key, value.Value));
+                                    }
+                                }
                             }
                         }
                     }
+                    finally
+                    {
+                        // Ensure that the lock is released.
+                        rwl.ReleaseReaderLock();
+                    }
+                }
+                catch (ApplicationException)
+                {
+                    // The reader lock request timed out.
+                    Interlocked.Increment(ref readerTimeouts);
                 }
             });
             bwOpen.RunWorkerAsync();
