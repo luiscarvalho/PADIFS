@@ -52,14 +52,18 @@ namespace Client
             try
             {
                 IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                , "tcp://localhost:"+ primaryPort +"/MetaData_Server");
-               
+                , "tcp://localhost:" + primaryPort + "/MetaData_Server");
+
                 mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, clientport);
             }
             catch (System.Net.Sockets.SocketException ex)
             {
                 System.Console.WriteLine("Falha do Servidor Metadata, o seu pedido não foi efectuado.");
-                throw new RemotingException("Falha do Servidor Metadata com o porto: "+primaryPort);
+                throw new RemotingException("Falha do Servidor Metadata com o porto: " + primaryPort);
+            }
+            catch (RemotingException ey)
+            {
+                System.Console.WriteLine(ey.Message+"\r\n");
             }
         }
 

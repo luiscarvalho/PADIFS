@@ -297,7 +297,7 @@ namespace MetaData_Server
                     }
                     else
                     {
-                        // avisa o client que não foi possivel efectuar a operação
+                        throw new RemotingException("Falha do Servidor não foi possível satisfazer o pedido");
                     }
                 }
             });
