@@ -103,14 +103,14 @@ namespace Client
 
             foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
-                if (value.Key.Key.Equals(filename))
+                if (value.Key.Value.Equals(filename))
                 {
                     localFilesClient.Add(new KeyValuePair<KeyValuePair<int, string>, object[]>(new KeyValuePair<int, string>(value.Key.Key, value.Key.Value),rowResult));
-                    System.Console.WriteLine("O ficheiro foi aberto com sucesso." + "\r\n");
-                    System.Console.WriteLine(rowResult[0].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult[1].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult[2].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult[3].ToString() + "\r\n");
+                    System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
+                    System.Console.WriteLine("Ficheiro: " + rowResult[0].ToString());
+                    System.Console.WriteLine("está contido em " + rowResult[1].ToString() + " data servers");
+                    System.Console.WriteLine("Read Quorum: " + rowResult[2].ToString() + " ");
+                    System.Console.WriteLine("Write Quorum: " + rowResult[3].ToString() + "\r\n");
                     foreach (KeyValuePair<string, byte[]> kp in (List<KeyValuePair<string, byte[]>>)rowResult[5])
                     {
                         System.Console.WriteLine(kp.Key.ToString() + " - " + ByteArrayToString(kp.Value) + "\r\n");

@@ -111,69 +111,175 @@ namespace MetaData_Server
 
         public void primaryMDServer(string mds_name, string mds_port)
         {
-//            BackgroundWorker bwprimary = new BackgroundWorker();
+            //            BackgroundWorker bwprimary = new BackgroundWorker();
 
-//            bwprimary.DoWork += new DoWorkEventHandler(
-//            delegate(object o, DoWorkEventArgs args)
-//            {
-//                BackgroundWorker b = o as BackgroundWorker;
-                this.primaryMDS_name = mds_name;
-                this.primaryMDS_port = mds_port;
-                IMDServer mdsAlive = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                       , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
-                mdsAlive.aliveMDServer(this.mdserver_name, this.mdserver_port);
-//            });
-//            bwprimary.RunWorkerAsync();
+            //            bwprimary.DoWork += new DoWorkEventHandler(
+            //            delegate(object o, DoWorkEventArgs args)
+            //            {
+            //                BackgroundWorker b = o as BackgroundWorker;
+            this.primaryMDS_name = mds_name;
+            this.primaryMDS_port = mds_port;
+            IMDServer mdsAlive = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                   , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
+            mdsAlive.aliveMDServer(this.mdserver_name, this.mdserver_port);
+            //            });
+            //            bwprimary.RunWorkerAsync();
         }
 
         public void aliveMDServer(string mds_name, string mds_port)
         {
-//            BackgroundWorker bwAlive = new BackgroundWorker();
+            //            BackgroundWorker bwAlive = new BackgroundWorker();
 
-//            bwAlive.DoWork += new DoWorkEventHandler(
-//            delegate(object o, DoWorkEventArgs args)
-//            {
-               // BackgroundWorker b = o as BackgroundWorker;
-                metaDataServersList.Add(new KeyValuePair<string, string>(mds_name, mds_port));
-                System.Console.WriteLine("MetaData Server " + mds_name + " registered in port " + mds_port);
-                IMDServer mdsSendTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                       , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
-                mdsSendTable.sendMDServer(mdTable, dataServerList);
-//            });
-//            bwAlive.RunWorkerAsync();
+            //            bwAlive.DoWork += new DoWorkEventHandler(
+            //            delegate(object o, DoWorkEventArgs args)
+            //            {
+            // BackgroundWorker b = o as BackgroundWorker;
+            metaDataServersList.Add(new KeyValuePair<string, string>(mds_name, mds_port));
+            System.Console.WriteLine("MetaData Server " + mds_name + " registered in port " + mds_port);
+            IMDServer mdsSendTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                   , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
+            mdsSendTable.sendMDServer(mdTable, dataServerList);
+            //            });
+            //            bwAlive.RunWorkerAsync();
         }
 
         public void sendMDServer(DataTable mdtable, List<KeyValuePair<string, string>> dserverList)
         {
-//            BackgroundWorker bwSend = new BackgroundWorker();
+            //            BackgroundWorker bwSend = new BackgroundWorker();
 
-//            bwSend.DoWork += new DoWorkEventHandler(
-//            delegate(object o, DoWorkEventArgs args)
-//            {
-//                BackgroundWorker b = o as BackgroundWorker;
-                this.mdTable = mdtable;
-                this.metaDataServersList = dserverList;
-                System.Console.WriteLine("Data received from the primary MDServer");
-//            });
-//            bwSend.RunWorkerAsync();
+            //            bwSend.DoWork += new DoWorkEventHandler(
+            //            delegate(object o, DoWorkEventArgs args)
+            //            {
+            //                BackgroundWorker b = o as BackgroundWorker;
+            this.mdTable = mdtable;
+            this.metaDataServersList = dserverList;
+            System.Console.WriteLine("Data received from the primary MDServer");
+            //            });
+            //            bwSend.RunWorkerAsync();
         }
 
         public bool RegisteDServer(string dservername, string port)
         {
-//            BackgroundWorker bwRegister = new BackgroundWorker();
+            //            BackgroundWorker bwRegister = new BackgroundWorker();
 
-//            bwRegister.DoWork += new DoWorkEventHandler(
-//            delegate(object o, DoWorkEventArgs args)
-//            {
-                lock (thisLock)
+            //            bwRegister.DoWork += new DoWorkEventHandler(
+            //            delegate(object o, DoWorkEventArgs args)
+            //            {
+            lock (thisLock)
+            {
+                List<string> listAux;
+                System.Console.WriteLine("Metadata server " + mdserver_name + ": " + dservername + " registered.");
+                dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
+                listAux = (List<string>)dataServerLoad[0];
+                listAux.Add(dservername);
+                dataServerLoad.Remove(0);
+                dataServerLoad.Add(0, listAux);
+
+                if (metaDataServersList.Count > 0)
                 {
-                    List<string> listAux;
-                    System.Console.WriteLine("Metadata server " + mdserver_name + ": " + dservername + " registered.");
-                    dataServerList.Add(new KeyValuePair<string, string>(dservername, port));
-                    listAux = (List<string>)dataServerLoad[0];
-                    listAux.Add(dservername);
-                    dataServerLoad.Remove(0);
-                    dataServerLoad.Add(0, listAux);
+                    foreach (KeyValuePair<string, string> mdserver in this.metaDataServersList)
+                    {
+                        try
+                        {
+                            IMDServer mdsRegisteDS = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                                  , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
+                            mdsRegisteDS.RegisteDServer(dservername, port);
+                        }
+                        catch (System.Net.Sockets.SocketException ex)
+                        {
+                            metaDataServersList.Remove(mdserver);
+                        }
+                    }
+                }
+            }
+            //            });
+            //            bwRegister.RunWorkerAsync();
+            return true;
+        }
+
+        public object[] CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
+        {
+            object[] createResult = null;
+            List<KeyValuePair<string, string>> dataServers = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string, byte[]>>();
+            //BackgroundWorker bwCreate = new BackgroundWorker();
+            //bwCreate.DoWork += new DoWorkEventHandler(
+            //delegate(object o, DoWorkEventArgs args)
+            //{
+            lock (thisLock)
+            {
+                Hashtable dataServerLoadAux = new Hashtable();
+                dataServerLoadAux = dataServerLoad;
+                List<string> dserverListAux1 = new List<string>();
+                List<string> dserverListAux2;
+                int nservers = dataServerList.Count();
+                int nserverdone = 1;
+                int i = 0;
+                int done = 0;
+                if (nservers >= dservers)
+                {
+                    while (nserverdone <= dservers)
+                    {
+                        dserverListAux1 = (List<string>)dataServerLoadAux[i];
+
+                        foreach (string dServer in dserverListAux1)
+                        {
+                            if (nserverdone > dservers) break;
+                            foreach (KeyValuePair<string, string> dser in dataServerList)
+                            {
+                                if (dser.Key == dServer)
+                                {
+                                    try
+                                    {
+                                        string ds = dser.Key;
+                                        IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
+                                          , "tcp://localhost:" + dser.Value + "/Data_Server");
+                                        byte[] createR = dsCreate.CREATE(fname + ".txt");
+                                        done = 1;
+                                        nserverdone += done;
+                                        dataServers.Add(new KeyValuePair<string, string>(dser.Key, dser.Value));
+                                        localFileList.Add(new KeyValuePair<string, byte[]>(dser.Key, createR));
+                                        System.Console.WriteLine("File added in: " + dser.Key);
+                                        if (nserverdone > dservers) break;
+                                    }
+                                    catch (System.Net.Sockets.SocketException ex)
+                                    {
+                                        done = 0;
+                                    }
+                                }
+                            }
+                            if (done == 1)
+                            {
+                                System.Console.WriteLine("dServer " + dServer);
+                                //dserverListAux1.Remove(dServer);
+                                dataServerLoadAux.Remove(i);
+                                dataServerLoadAux.Add(i, dserverListAux1);
+                                if (dataServerLoadAux.Count < i)
+                                {
+                                    dserverListAux2 = (List<string>)dataServerLoadAux[i + 1];
+                                    dserverListAux2.Add(dServer);
+                                    dataServerLoadAux.Remove(i + 1);
+                                    dataServerLoadAux.Add(i + 1, dserverListAux2);
+                                }
+                                else
+                                {
+                                    dataServerLoadAux.Remove(i + 1);
+                                    dataServerLoadAux.Add(i + 1, new List<string>() { dServer });
+                                }
+                            }
+                            i++;
+                        }
+                    }
+                    mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers, localFileList);
+                    foreach (DataRow dr in mdTable.Rows)
+                    {
+                        if (dr["Filename"].Equals(fname) && dr["Data Servers"].Equals(dataServers))
+                        {
+                            createResult = dr.ItemArray;
+                        }
+                    }
+                    dataServerLoad = dataServerLoadAux;
+                    System.Console.WriteLine("File " + fname + " created.");
 
                     if (metaDataServersList.Count > 0)
                     {
@@ -181,9 +287,9 @@ namespace MetaData_Server
                         {
                             try
                             {
-                                IMDServer mdsRegisteDS = (IMDServer)Activator.GetObject(typeof(IMDServer)
+                                IMDServer mdsAddTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
                                                       , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
-                                mdsRegisteDS.RegisteDServer(dservername, port);
+                                mdsAddTable.addMDServerTable(fname, dservers, rquorum, wquorum, dataServers, dataServerLoad, localFileList);
                             }
                             catch (System.Net.Sockets.SocketException ex)
                             {
@@ -191,119 +297,14 @@ namespace MetaData_Server
                             }
                         }
                     }
-               }
-//            });
-//            bwRegister.RunWorkerAsync();
-            return true;
-        }
-
-        public object[] CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
-        {
-            object[] createResult = null;
-            List<KeyValuePair<string, string>> dataServers = new List<KeyValuePair<string,string>>();
-            List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string,byte[]>>();
-            //BackgroundWorker bwCreate = new BackgroundWorker();
-            //bwCreate.DoWork += new DoWorkEventHandler(
-            //delegate(object o, DoWorkEventArgs args)
-            //{
-                lock (thisLock)
-                {
-                    Hashtable dataServerLoadAux = new Hashtable();
-                    dataServerLoadAux = dataServerLoad;
-                    List<string> dserverListAux1;
-                    List<string> dserverListAux2;
-                    int nservers = dataServerList.Count();
-                    int nserverdone = 0;
-                    int i = 0;
-                    int done = 0;
-                    if (nservers >= dservers)
-                    {
-                        while (nserverdone <= dservers)
-                        {
-                            dserverListAux1 = (List<string>)dataServerLoadAux[i];
-
-                            foreach (string dServer in dserverListAux1)
-                            {
-                                if (nserverdone > dservers) break;
-                                foreach (KeyValuePair<string, string> dser in dataServerList)
-                                {
-                                    if (dser.Key == dServer)
-                                    {
-                                        try
-                                        {
-                                            string ds = dser.Key;
-                                            IDServer dsCreate = (IDServer)Activator.GetObject(typeof(IDServer)
-                                              , "tcp://localhost:" + dser.Value + "/Data_Server");
-                                           byte[] createR = dsCreate.CREATE(fname + ".txt");
-                                            done = 1;
-                                            nserverdone += done;
-                                            dataServers.Add(new KeyValuePair<string, string>(dser.Key, dser.Value));
-                                            localFileList.Add(new KeyValuePair<string, byte[]>(dser.Key, createR));
-                                            System.Console.WriteLine("File added in: " + dser.Key);
-                                            if (nserverdone >= dservers) break;
-                                        }
-                                        catch (System.Net.Sockets.SocketException ex)
-                                        {
-                                            done = 0;
-                                        }
-                                    }
-                                }
-                                if (done == 1)
-                                {
-                                    System.Console.WriteLine("dServer " + dServer);
-                                    //dserverListAux1.Remove(dServer);
-                                    dataServerLoadAux.Remove(i);
-                                    dataServerLoadAux.Add(i, dserverListAux1);
-                                    if (dataServerLoadAux.Count < i)
-                                    {
-                                        dserverListAux2 = (List<string>)dataServerLoadAux[i + 1];
-                                        dserverListAux2.Add(dServer);
-                                        dataServerLoadAux.Remove(i+1);
-                                        dataServerLoadAux.Add(i+1, dserverListAux2);
-                                    }
-                                    else
-                                    {
-                                        dataServerLoadAux.Add(i+1, new List<string>() { dServer });
-                                    }
-                                }
-                                i++;
-                            }
-                        }
-                        mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers, localFileList);
-                        foreach (DataRow dr in mdTable.Rows)
-                        {
-                            if (dr["Filename"].Equals(fname) && dr["Data Servers"].Equals(dataServers))
-                            {
-                                createResult = dr.ItemArray;
-                            }
-                        }
-                        dataServerLoad = dataServerLoadAux;
-                        System.Console.WriteLine("File " + fname + " created.");
-
-                        if (metaDataServersList.Count > 0)
-                        {
-                            foreach (KeyValuePair<string, string> mdserver in this.metaDataServersList)
-                            {
-                                try
-                                {
-                                    IMDServer mdsAddTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                                          , "tcp://localhost:" + mdserver.Value + "/MetaData_Server");
-                                    mdsAddTable.addMDServerTable(fname, dservers, rquorum, wquorum, dataServers, dataServerLoad, localFileList);
-                                }
-                                catch (System.Net.Sockets.SocketException ex)
-                                {
-                                    metaDataServersList.Remove(mdserver);
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        throw new RemotingException("Não foi possível satisfazer o pedido: Data Servers insuficientes");
-                    }
                 }
-           // });
-           // bwCreate.RunWorkerAsync();
+                else
+                {
+                    throw new RemotingException("Não foi possível satisfazer o pedido: Data Servers insuficientes");
+                }
+            }
+            // });
+            // bwCreate.RunWorkerAsync();
             return createResult;
         }
 
@@ -379,11 +380,11 @@ namespace MetaData_Server
         {
             object[] openResult = null;
 
-            BackgroundWorker bwOpen = new BackgroundWorker();
+            //BackgroundWorker bwOpen = new BackgroundWorker();
 
-            bwOpen.DoWork += new DoWorkEventHandler(
-            delegate(object o, DoWorkEventArgs args)
-            {
+            //bwOpen.DoWork += new DoWorkEventHandler(
+            //delegate(object o, DoWorkEventArgs args)
+           // {
                 try
                 {
                     rwl.AcquireReaderLock(20);
@@ -408,8 +409,8 @@ namespace MetaData_Server
                     // The reader lock request timed out.
                     Interlocked.Increment(ref readerTimeouts);
                 }
-            });
-            bwOpen.RunWorkerAsync();
+            //});
+            //bwOpen.RunWorkerAsync();
             return openResult;
         }
 
