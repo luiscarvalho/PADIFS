@@ -39,8 +39,8 @@ namespace Client
         string clientname;
         string clientport;
         int fileRegister = 0;
-        List<KeyValuePair<KeyValuePair<int, string>, DataRow>> filesClient = new List<KeyValuePair<KeyValuePair<int, string>, DataRow>>();
-        List<KeyValuePair<KeyValuePair<int, string>, DataRow>> localFilesClient = new List<KeyValuePair<KeyValuePair<int, string>, DataRow>>();
+        List<KeyValuePair<KeyValuePair<int, string>, object[]>> filesClient = new List<KeyValuePair<KeyValuePair<int, string>, object[]>>();
+        List<KeyValuePair<KeyValuePair<int, string>, object[]>> localFilesClient = new List<KeyValuePair<KeyValuePair<int, string>, object[]>>();
 
 
         public Cliente(string clientname, string clientport)
@@ -49,10 +49,10 @@ namespace Client
             this.clientport = clientport;
         }
 
-        public DataRow CREATE(string clientname, string filename, int nb_dataservers,
+        public object[] CREATE(string clientname, string filename, int nb_dataservers,
             int read_quorum, int write_quorum, string primaryPort)
         {
-            DataRow createResult = null;
+            object[] createResult = null;
             try
             {
                 IMDServer mdscreate = (IMDServer)Activator.GetObject(typeof(IMDServer)
@@ -60,15 +60,19 @@ namespace Client
 
                 createResult = mdscreate.CREATE(filename, nb_dataservers, read_quorum, write_quorum, clientport);
                 KeyValuePair<int, string> fileR = new KeyValuePair<int, string>(fileRegister, filename);
-                filesClient.Add(new KeyValuePair<KeyValuePair<int, string>, DataRow>(new KeyValuePair<int, string>(fileRegister, filename), createResult));
+                filesClient.Add(new KeyValuePair<KeyValuePair<int, string>, object[]>(new KeyValuePair<int, string>(fileRegister, filename), createResult));
                 fileRegister++;
 
                 System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
-                System.Console.WriteLine(createResult["Filename"].ToString() + "\r\n");
-                System.Console.WriteLine(createResult["NB_DataServers"].ToString() + "\r\n");
-                System.Console.WriteLine(createResult["Read_Quorum"].ToString() + "\r\n");
-                System.Console.WriteLine(createResult["Write_Quorum"].ToString() + "\r\n");
-                System.Console.WriteLine(createResult["Local Files"].ToString() + "\r\n");
+                System.Console.WriteLine("Ficheiro: " + createResult[0].ToString());
+                System.Console.WriteLine("está contido em " + createResult[1].ToString() + " data servers");
+                System.Console.WriteLine("Read Quorum: " + createResult[2].ToString() + " ");
+                System.Console.WriteLine("Write Quorum: " + createResult[3].ToString() + "\r\n");
+
+                foreach (KeyValuePair<string,string> kp in (List<KeyValuePair<string,string>>) createResult[4]){
+                    System.Console.WriteLine(kp.Key.ToString() + " - " + kp.Value.ToString() + "\r\n");
+                }
+                
             }
             catch (System.Net.Sockets.SocketException ex)
             {
@@ -83,24 +87,24 @@ namespace Client
             return createResult;
         }
 
-        public DataRow OPEN(string clientname, string filename, string primaryPort)
+        public object[] OPEN(string clientname, string filename, string primaryPort)
         {
             System.Console.WriteLine("I want to open a file." + "\r\n");
             IMDServer mdsopen = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:" + primaryPort + "/MetaData_Server");
-            DataRow rowResult = mdsopen.OPEN(filename);
+            object[] rowResult = mdsopen.OPEN(filename);
 
-            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
                 if (value.Key.Key.Equals(filename))
                 {
-                    localFilesClient.Add(new KeyValuePair<KeyValuePair<int, string>, DataRow>(new KeyValuePair<int, string>(value.Key.Key, value.Key.Value), rowResult));
+                    localFilesClient.Add(new KeyValuePair<KeyValuePair<int, string>, object[]>(new KeyValuePair<int, string>(value.Key.Key, value.Key.Value),rowResult));
                     System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
-                    System.Console.WriteLine(rowResult["Filename"].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult["NB_DataServers"].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult["Read_Quorum"].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult["Write_Quorum"].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult["Local Files"].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult[0].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult[1].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult[2].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult[3].ToString() + "\r\n");
+                    System.Console.WriteLine(rowResult[4].ToString() + "\r\n");
                     break;
                 }
 
@@ -121,12 +125,12 @@ namespace Client
         public string READ(string clientname, string filename, string semantics)
         {
             string result = null;
-            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
 
                 if (value.Key.Key.Equals(filename))
                 {
-                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value["Data Servers"];
+                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value[4];
                     foreach (KeyValuePair<string, string> server in servers)
                     {
                         IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer), "tcp://localhost:" + server.Value + "/Data_Server");
@@ -140,12 +144,12 @@ namespace Client
 
         public void WRITE(string clientname, string filename, byte[] content)
         {
-            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> value in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
 
                 if (value.Key.Key.Equals(filename))
                 {
-                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value["Data Servers"];
+                    List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value[4];
                     foreach (KeyValuePair<string, string> server in servers)
                     {
                         IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
@@ -175,7 +179,7 @@ namespace Client
 
             System.Console.WriteLine("File List opened by this client: \r\n");
 
-            foreach (KeyValuePair<KeyValuePair<int, string>, DataRow> file in filesClient)
+            foreach (KeyValuePair<KeyValuePair<int, string>, object[]> file in filesClient)
             {
                 System.Console.WriteLine("File: " + file.Key.Key + " Content: " + file.Key.Value + "\r\n");
             }

@@ -29,7 +29,7 @@ namespace PuppetMaster
         Hashtable clientList = new Hashtable();
         Hashtable dataserverList = new Hashtable();
         Hashtable processList = new Hashtable();
-        List<KeyValuePair<int, DataRow>> filesRegister = new List<KeyValuePair<int, DataRow>>();
+        List<KeyValuePair<int, object[]>> filesRegister = new List<KeyValuePair<int, object[]>>();
         int fileR = 0;
         string primaryMDserver;
         private List<KeyValuePair<int, string>> localStringRegister = new List<KeyValuePair<int, string>>();
@@ -368,7 +368,7 @@ namespace PuppetMaster
 
         private void Create(string[] command)
         {
-            DataRow dataRow = null;
+            object[] dataRow = null;
             if (clientList.Contains(command[1]))
             {
                 // Commands client to create a file
@@ -377,7 +377,7 @@ namespace PuppetMaster
                     IClient cCreate = (IClient)Activator.GetObject(typeof(IClient)
                        , "tcp://localhost:" + clientList[command[1]] + "/ClientRemote");
                     dataRow = cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
-                    filesRegister.Add(new KeyValuePair<int, DataRow>(fileR, dataRow));
+                    filesRegister.Add(new KeyValuePair<int, object[]>(fileR, dataRow));
                     showInfo(fileR, dataRow);
                     fileR++;
                 }
@@ -409,7 +409,7 @@ namespace PuppetMaster
                         , "tcp://localhost:" + clientList[command[1]].ToString() + "/ClientRemote");
                     Thread.Sleep(1000);
                     dataRow = cCreate.CREATE(command[1], command[3], Convert.ToInt32(command[5]), Convert.ToInt32(command[7]), Convert.ToInt32(command[9]), metadataList[this.primaryMDserver].ToString());
-                    filesRegister.Add(new KeyValuePair<int, DataRow>(fileR, dataRow));
+                    filesRegister.Add(new KeyValuePair<int, object[]>(fileR, dataRow));
                     showInfo(fileR, dataRow);
                     fileR++;
                 }
@@ -430,15 +430,15 @@ namespace PuppetMaster
             }
         }
 
-        private void showInfo(int fileR, DataRow dataRow)
+        private void showInfo(int fileR, object[] dataRow)
         {
             infoTX.Text = infoTX.Text + "File-Register " + fileR + " info:\r\n";
-            infoTX.Text = infoTX.Text + "Filename - " + dataRow["Filename"] + "\r\n";
-            infoTX.Text = infoTX.Text + "Número de Data Servers - " + dataRow["NB_DataServers"] + "\r\n";
-            infoTX.Text = infoTX.Text + "Read Quorum - " + dataRow["Read_Quorum"] + "\r\n";
-            infoTX.Text = infoTX.Text + "Write Quorum - " + dataRow["Write_Quorum"] + "\r\n";
+            infoTX.Text = infoTX.Text + "Filename - " + dataRow[0] + "\r\n";
+            infoTX.Text = infoTX.Text + "Número de Data Servers - " + dataRow[1] + "\r\n";
+            infoTX.Text = infoTX.Text + "Read Quorum - " + dataRow[2] + "\r\n";
+            infoTX.Text = infoTX.Text + "Write Quorum - " + dataRow[3] + "\r\n";
             infoTX.Text = infoTX.Text + "Data Servers:\r\n";
-            foreach (KeyValuePair<string, string> dserver in (List<KeyValuePair<string, string>>)dataRow["Data Servers"])
+            foreach (KeyValuePair<string, string> dserver in (List<KeyValuePair<string, string>>)dataRow[4])
             {
                 infoTX.Text = infoTX.Text + dserver.Key + " - " + dserver.Value + "\r\n";
             }

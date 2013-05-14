@@ -69,7 +69,7 @@ namespace MetaData_Server
             mdTable.Columns.Add("Read_Quorum", typeof(int));
             mdTable.Columns.Add("Write_Quorum", typeof(int));
             mdTable.Columns.Add("Data Servers", typeof(List<KeyValuePair<string, string>>));
-            mdTable.Columns.Add("Local Files", typeof(List<KeyValuePair<string, string>>));
+            mdTable.Columns.Add("Local Files", typeof(List<KeyValuePair<string, byte[]>>));
             this.mdserver_name = mdsname;
             this.mdserver_port = port;
             mdTable.TableName.Insert(0, mdserver_name);
@@ -197,9 +197,9 @@ namespace MetaData_Server
             return true;
         }
 
-        public DataRow CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
+        public object[] CREATE(string fname, int dservers, int rquorum, int wquorum, string clientport)
         {
-            DataRow createResult = null;
+            object[] createResult = null;
             List<KeyValuePair<string, string>> dataServers = new List<KeyValuePair<string,string>>();
             List<KeyValuePair<string, byte[]>> localFileList = new List<KeyValuePair<string,byte[]>>();
             //BackgroundWorker bwCreate = new BackgroundWorker();
@@ -224,7 +224,7 @@ namespace MetaData_Server
 
                             foreach (string dServer in dserverListAux1)
                             {
-                                if (nserverdone >= dservers) break;
+                                if (nserverdone > dservers) break;
                                 foreach (KeyValuePair<string, string> dser in dataServerList)
                                 {
                                     if (dser.Key == dServer)
@@ -269,8 +269,14 @@ namespace MetaData_Server
                                 i++;
                             }
                         }
-
-                        createResult = mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers,localFileList);
+                        mdTable.Rows.Add(fname, dservers, rquorum, wquorum, dataServers, localFileList);
+                        foreach (DataRow dr in mdTable.Rows)
+                        {
+                            if (dr["Filename"].Equals(fname) && dr["Data Servers"].Equals(dataServers))
+                            {
+                                createResult = dr.ItemArray;
+                            }
+                        }
                         dataServerLoad = dataServerLoadAux;
                         System.Console.WriteLine("File " + fname + " created.");
 
@@ -369,9 +375,9 @@ namespace MetaData_Server
             bwDelete.RunWorkerAsync();
         }
 
-        public DataRow OPEN(string fname)
+        public object[] OPEN(string fname)
         {
-            DataRow openResult = null;
+            object[] openResult = null;
 
             BackgroundWorker bwOpen = new BackgroundWorker();
 
@@ -387,7 +393,7 @@ namespace MetaData_Server
                         {
                             if (dr["Filename"].ToString() == fname)
                             {
-                                openResult = dr;
+                                openResult = dr.ItemArray;
                             }
                         }
                     }

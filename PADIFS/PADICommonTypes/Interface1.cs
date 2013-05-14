@@ -11,9 +11,9 @@ namespace PADICommonTypes
 
     public interface IMDServer
     {
-        DataRow OPEN(string filename);
+        object[] OPEN(string filename);
         void CLOSE(string filename);
-        DataRow CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
+        object[] CREATE(string filename, int nb_dataservers, int read_quorum, int write_quorum, string clientport);
         void DELETE(string filename);
         void RECOVER(string mdserver);
         void FAIL(string mdserver);
@@ -43,9 +43,9 @@ namespace PADICommonTypes
 
     public interface IClient 
     {
-        DataRow CREATE(string clientname, string filename, int nb_dataservers,
+        object[] CREATE(string clientname, string filename, int nb_dataservers,
                 int read_quorum, int write_quorum, string primaryPort);
-        DataRow OPEN(string clientname, string filename, string primaryPort);
+        object[] OPEN(string clientname, string filename, string primaryPort);
         void CLOSE(string clientname, string filename, string primaryPort);
         string READ(string clientname, string filename, string semantics);
         void WRITE(string clientname, string filename, byte[] content);
