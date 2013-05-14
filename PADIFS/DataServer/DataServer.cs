@@ -101,7 +101,6 @@ namespace DataServer
 
         public string READ(string filename, string semantics)
         {
-            char[] fileName = new char[1];
             string result = null;
             try
             {
@@ -112,7 +111,7 @@ namespace DataServer
                     {
                         foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in fileList)
                         {
-                            if (file.Key.Equals(new string(fileName)))
+                            if (file.Key.Equals(filename+".txt"))
                             {
                                 for (int i = 0; i <= file.Value.Value; i++)
                                 {
@@ -123,7 +122,7 @@ namespace DataServer
                                         System.Console.WriteLine("Versao do ficheiro n: " + i);
                                     }
 
-                                    if (file.Value.Key.Equals(i))
+                                    if (file.Value.Value.Equals(i))
                                     {
                                         System.Console.WriteLine("RESULT: " + System.Text.Encoding.Default.GetString(file.Value.Key));
                                         result = System.Text.Encoding.UTF8.GetString(file.Value.Key);
@@ -157,18 +156,17 @@ namespace DataServer
         {
             try
             {
-                rwl.AcquireWriterLock(100);
+                rwl.AcquireWriterLock(10);
                 try
                 {
-                    string fileName = null;
                     KeyValuePair<string, KeyValuePair<byte[],int>> result = new KeyValuePair<string, KeyValuePair<byte[],int>>();
                     if (freezeServer == 0)
                     {
                         foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in fileList)
-                        {
-                            if (file.Key.Equals(fileName))
+                        {         
+                            if (file.Key.Equals(filename+".txt"))
                             {
-                                result = new KeyValuePair<string, KeyValuePair<byte[],int>>(fileName,
+                                result = new KeyValuePair<string, KeyValuePair<byte[],int>>(file.Key,
                         new KeyValuePair<byte[],int>(content,(file.Value.Value) + 1));
                             }
                         }
@@ -207,14 +205,16 @@ namespace DataServer
 
         public void UNFREEZE(string dserver)
         {
+            this.freezeServer = 0;
             if (failServer == 0)
             {
-                foreach (string request in dsrequests)
+               foreach (string request in dsrequests.ToArray())
                 {
                     string[] req = request.Split('/');
 
                     if (req[0].Equals("READ"))
                     {
+                        System.Console.WriteLine(req[1] + " " + req[2]);
                         READ(req[1], req[2]);
                     }
                     else if (req[0].Equals("WRITE"))
@@ -242,6 +242,12 @@ namespace DataServer
             //debug("Server " + dserver_name + "is back online.");
         }
 
+        public static string ByteArrayToString(byte[] ba)
+        {
+            string hex = BitConverter.ToString(ba);
+            return hex.Replace("-", "");
+        }
+
         public void DUMP()
         {
             System.Console.WriteLine("DataServer: " + this.dserver_name + "\r\n");
@@ -252,14 +258,14 @@ namespace DataServer
             foreach (KeyValuePair<string, KeyValuePair<byte[],int>> file in this.fileList)
             {
                 System.Console.WriteLine("File: " + file.Key + " Version: " + file.Value.Value + " Content: "
-                    + System.Text.Encoding.UTF8.GetString(file.Value.Key) + "\r\n");
+                    + System.Text.Encoding.ASCII.GetString(file.Value.Key) + "\r\n");
             }
 
             System.Console.WriteLine("Local File List: \r\n");
 
             foreach (KeyValuePair<string, byte[]> localfile in this.localFileList)
             {
-                System.Console.WriteLine("File: " + localfile.Key + " MetaData: " + localfile.Value);
+                System.Console.WriteLine("File: " + localfile.Key + " MetaData: " + System.Text.Encoding.UTF8.GetString(localfile.Value));
             }
         }
     }

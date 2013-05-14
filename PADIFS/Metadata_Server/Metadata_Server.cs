@@ -95,18 +95,18 @@ namespace MetaData_Server
         **/
         public void loadMDServer(DataTable MDtable)
         {
-            BackgroundWorker bwLoad = new BackgroundWorker();
+           // BackgroundWorker bwLoad = new BackgroundWorker();
 
-            bwLoad.DoWork += new DoWorkEventHandler(
-            delegate(object o, DoWorkEventArgs args)
-            {
-                BackgroundWorker b = o as BackgroundWorker;
+           // bwLoad.DoWork += new DoWorkEventHandler(
+           // delegate(object o, DoWorkEventArgs args)
+           // {
+            //    BackgroundWorker b = o as BackgroundWorker;
                 if (!MDtable.Equals(null))
                 {
                     this.mdTable = MDtable;
                 }
-            });
-            bwLoad.RunWorkerAsync();
+           // });
+           // bwLoad.RunWorkerAsync();
         }
 
         public void primaryMDServer(string mds_name, string mds_port)
@@ -137,7 +137,7 @@ namespace MetaData_Server
             metaDataServersList.Add(new KeyValuePair<string, string>(mds_name, mds_port));
             System.Console.WriteLine("MetaData Server " + mds_name + " registered in port " + mds_port);
             IMDServer mdsSendTable = (IMDServer)Activator.GetObject(typeof(IMDServer)
-                                   , "tcp://localhost:" + primaryMDS_port + "/MetaData_Server");
+                                   , "tcp://localhost:" + mds_port + "/MetaData_Server");
             mdsSendTable.sendMDServer(mdTable, dataServerList);
             //            });
             //            bwAlive.RunWorkerAsync();

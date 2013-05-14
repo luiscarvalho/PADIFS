@@ -38,6 +38,7 @@ namespace Client
     {
         string clientname;
         string clientport;
+        string mdport;
         int fileRegister = 0;
         List<KeyValuePair<KeyValuePair<int, string>, object[]>> filesClient = new List<KeyValuePair<KeyValuePair<int, string>, object[]>>();
         List<KeyValuePair<KeyValuePair<int, string>, object[]>> localFilesClient = new List<KeyValuePair<KeyValuePair<int, string>, object[]>>();
@@ -127,6 +128,7 @@ namespace Client
         {
             IMDServer mdsclose = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:" + primaryPort + "/MetaData_Server");
+            this.mdport = primaryPort;
             mdsclose.CLOSE(filename);
         }
 
@@ -136,13 +138,13 @@ namespace Client
             foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
 
-                if (value.Key.Key.Equals(filename))
+                if (value.Key.Key.Equals(Int32.Parse(filename)))
                 {
                     List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value[4];
                     foreach (KeyValuePair<string, string> server in servers)
                     {
                         IDServer dsread = (IDServer)Activator.GetObject(typeof(IDServer), "tcp://localhost:" + server.Value + "/Data_Server");
-                        result = dsread.READ(filename, semantics);
+                        result = dsread.READ(value.Key.Value, semantics);
                     }
                 }
             }
@@ -155,14 +157,14 @@ namespace Client
             foreach (KeyValuePair<KeyValuePair<int, string>, object[]> value in filesClient)
             {
 
-                if (value.Key.Key.Equals(filename))
+                if (value.Key.Key.Equals(Int32.Parse(filename)))
                 {
                     List<KeyValuePair<string, string>> servers = (List<KeyValuePair<string, string>>)value.Value[4];
                     foreach (KeyValuePair<string, string> server in servers)
                     {
                         IDServer dswrite = (IDServer)Activator.GetObject(typeof(IDServer)
-                        , "tcp://localhost:807" + server.Value + "/Data_Server");
-                        dswrite.WRITE(filename, content);
+                        , "tcp://localhost:" + server.Value + "/Data_Server");
+                        dswrite.WRITE(value.Key.Value, content);
                     }
                 }
             }
@@ -171,7 +173,7 @@ namespace Client
         public void DELETE(string clientname, string filename)
         {
             IMDServer mdsdelete = (IMDServer)Activator.GetObject(typeof(IMDServer)
-            , "tcp://localhost:8086/MetaData_Server");
+            , "tcp://localhost:" + this.mdport + "/MetaData_Server");
             mdsdelete.DELETE(filename);
         }
 

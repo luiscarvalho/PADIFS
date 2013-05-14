@@ -331,7 +331,7 @@ namespace PuppetMaster
                 // comando que lança um processo dataserver
                 string[] nserver = command[1].Split('-');
                 System.Diagnostics.Process.Start(Directory.GetCurrentDirectory() + "\\DataServer\\bin\\Debug\\DataServer.exe",
-                    command[1].ToString() + " 807" + nserver[1].ToString() + " " + metadataList[primaryMDserver].ToString());
+                    command[1].ToString() + " 807" + nserver[1].ToString() + " " + metadataList[this.primaryMDserver].ToString());
                 infoTX.Text = infoTX.Text + "Start data server: " + command[1] + " with port: " + "807" + nserver[1] + "\r\n";
                 dataserverList.Add(command[1], "807" + nserver[1]);
             }
@@ -358,7 +358,7 @@ namespace PuppetMaster
             {
                 IMDServer mdsPrimaryMDServer = (IMDServer)Activator.GetObject(typeof(IMDServer)
                                        , "tcp://localhost:" + metadataList[command[1]] + "/MetaData_Server");
-                mdsPrimaryMDServer.primaryMDServer(primaryMDserver, metadataList[primaryMDserver].ToString());
+                mdsPrimaryMDServer.primaryMDServer(primaryMDserver, metadataList[this.primaryMDserver].ToString());
             }
             else
             {
