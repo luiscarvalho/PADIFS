@@ -430,6 +430,12 @@ namespace PuppetMaster
             }
         }
 
+        public static string ByteArrayToString(byte[] ba)
+        {
+            string hex = BitConverter.ToString(ba);
+            return hex.Replace("-", "");
+        }
+
         private void showInfo(int fileR, object[] dataRow)
         {
             infoTX.Text = infoTX.Text + "File-Register " + fileR + " info:\r\n";
@@ -438,9 +444,9 @@ namespace PuppetMaster
             infoTX.Text = infoTX.Text + "Read Quorum - " + dataRow[2] + "\r\n";
             infoTX.Text = infoTX.Text + "Write Quorum - " + dataRow[3] + "\r\n";
             infoTX.Text = infoTX.Text + "Data Servers:\r\n";
-            foreach (KeyValuePair<string, string> dserver in (List<KeyValuePair<string, string>>)dataRow[4])
+            foreach (KeyValuePair<string, byte[]> dserver in (List<KeyValuePair<string, byte[]>>) dataRow[5])
             {
-                infoTX.Text = infoTX.Text + dserver.Key + " - " + dserver.Value + "\r\n";
+                infoTX.Text = infoTX.Text + dserver.Key + " - " + ByteArrayToString(dserver.Value) + "\r\n";
             }
         }
 

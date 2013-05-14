@@ -69,8 +69,9 @@ namespace Client
                 System.Console.WriteLine("Read Quorum: " + createResult[2].ToString() + " ");
                 System.Console.WriteLine("Write Quorum: " + createResult[3].ToString() + "\r\n");
 
-                foreach (KeyValuePair<string,string> kp in (List<KeyValuePair<string,string>>) createResult[4]){
-                    System.Console.WriteLine(kp.Key.ToString() + " - " + kp.Value.ToString() + "\r\n");
+                foreach (KeyValuePair<string,byte[]> kp in (List<KeyValuePair<string,byte[]>>) createResult[5]){
+
+                    System.Console.WriteLine(kp.Key.ToString() + " - " + ByteArrayToString(kp.Value) + "\r\n");
                 }
                 
             }
@@ -87,6 +88,12 @@ namespace Client
             return createResult;
         }
 
+        public static string ByteArrayToString(byte[] ba)
+        {
+            string hex = BitConverter.ToString(ba);
+            return hex.Replace("-", "");
+        }
+
         public object[] OPEN(string clientname, string filename, string primaryPort)
         {
             System.Console.WriteLine("I want to open a file." + "\r\n");
@@ -99,12 +106,15 @@ namespace Client
                 if (value.Key.Key.Equals(filename))
                 {
                     localFilesClient.Add(new KeyValuePair<KeyValuePair<int, string>, object[]>(new KeyValuePair<int, string>(value.Key.Key, value.Key.Value),rowResult));
-                    System.Console.WriteLine("O ficheiro foi criado com sucesso." + "\r\n");
+                    System.Console.WriteLine("O ficheiro foi aberto com sucesso." + "\r\n");
                     System.Console.WriteLine(rowResult[0].ToString() + "\r\n");
                     System.Console.WriteLine(rowResult[1].ToString() + "\r\n");
                     System.Console.WriteLine(rowResult[2].ToString() + "\r\n");
                     System.Console.WriteLine(rowResult[3].ToString() + "\r\n");
-                    System.Console.WriteLine(rowResult[4].ToString() + "\r\n");
+                    foreach (KeyValuePair<string, byte[]> kp in (List<KeyValuePair<string, byte[]>>)rowResult[5])
+                    {
+                        System.Console.WriteLine(kp.Key.ToString() + " - " + ByteArrayToString(kp.Value) + "\r\n");
+                    }
                     break;
                 }
 
@@ -118,8 +128,6 @@ namespace Client
             IMDServer mdsclose = (IMDServer)Activator.GetObject(typeof(IMDServer)
             , "tcp://localhost:" + primaryPort + "/MetaData_Server");
             mdsclose.CLOSE(filename);
-
-
         }
 
         public string READ(string clientname, string filename, string semantics)
